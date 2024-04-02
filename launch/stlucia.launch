@@ -1,0 +1,35 @@
+<launch>
+    <node
+        pkg="ratslam"
+        exec="ratslam_lv"
+        name="RatSLAMLocalViewCells"
+        output="screen"
+        args="$(find ratslam)/config/config_stlucia.txt _image_transport:=compressed">
+    </node>
+
+    <node
+        pkg="ratslam"
+        exec="ratslam_pc"
+        name="RatSLAMPoseCells"
+        output="screen"
+        args="$(find ratslam)/config/config_stlucia.txt _image_transport:=compressed">
+    </node>
+
+    <node
+        pkg="ratslam"
+        exec="ratslam_em"
+        name="RatSLAMExperienceMap"
+        output="screen"
+        args="$(find ratslam)/config/config_stlucia.txt _image_transport:=compressed">
+    </node>
+
+	<node
+        pkg="ratslam"
+        exec="ratslam_vo"
+        name="RatSLAMVisualOdometry"
+        output="screen"
+        args="$(find ratslam)/config/config_stlucia.txt _image_transport:=compressed">
+    </node>
+</launch>
+
+ 

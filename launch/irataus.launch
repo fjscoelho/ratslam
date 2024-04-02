@@ -1,0 +1,41 @@
+<!-- <launch>
+    <node
+        pkg="ratslam"
+        exec="ratslam_lv"
+        name="RatSLAMLocalViewCells"
+        output="screen"
+        args="$(find ratslam)/config/config_irataus.txt _image_transport:=compressed">
+    </node>
+
+    <node
+        pkg="ratslam"
+        exec="ratslam_pc"
+        name="RatSLAMPoseCells"
+        output="screen"
+        args="$(find ratslam)/config/config_irataus.txt _image_transport:=compressed">
+    </node>
+
+    <node
+        pkg="ratslam_ros"
+        exec="ratslam_em"
+        name="RatSLAMExperienceMap"
+        output="screen"
+        args="$(find ratslam)/config/config_irataus.txt _image_transport:=compressed">
+    </node>
+</launch> -->
+
+ 
+<arg name="config_file" default="$(find-pkg-share ratslam)/config/config_irataus.yaml"/>
+<launch>
+    <node
+        pkg="ratslam"
+        exec="ratslam_lv"
+        name="RatSLAMLocalViewCells"
+		namespace="irat_red"
+        output="screen">
+
+		<param from="$(var config_file)"/>
+    </node>
+</launch>
+
+ 
