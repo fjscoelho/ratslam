@@ -16,7 +16,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
-# set(MEDIA_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/media)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -27,11 +26,14 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS serialization)
-find_package(OpenCV)
 find_package(Irrlicht REQUIRED)
 find_package(OpenGL REQUIRED)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(OpenCV4 REQUIRED opencv4)
 
 set(ament_dependencies
   rclcpp
@@ -43,13 +45,7 @@ set(ament_dependencies
   cv_bridge
 )
 
-include_directories(
-  include 
-  ${Boost_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
-)
-
-#ratslam library
+# Ratslam library
 add_library(ratslam 
   src/ratslam/local_view_match.cpp 
   src/ratslam/posecell_network.cpp 
@@ -57,45 +53,71 @@ add_library(ratslam
   src/ratslam/visual_odometry.cpp
 )
 
+# Executável ratslam_lv
 add_executable(ratslam_lv src/main_lv.cpp)
 ament_target_dependencies(ratslam_lv ${ament_dependencies})
+target_include_directories(ratslam_lv PUBLIC
+  include 
+  ${Boost_INCLUDE_DIRS}
+  ${OpenCV4_INCLUDE_DIRS}
+)
 target_link_libraries(ratslam_lv 
   ratslam
   ${IRRLICHT_LIBRARIES}
   ${OPENGL_LIBRARIES}
-  ${OpenCV_LIBRARIES}
+  ${OpenCV4_LIBRARIES}
 )
 
+# Executável ratslam_pc
 add_executable(ratslam_pc src/main_pc.cpp)
 ament_target_dependencies(ratslam_pc ${ament_dependencies})
+target_include_directories(ratslam_pc PUBLIC
+  include 
+  ${Boost_INCLUDE_DIRS}
+  ${OpenCV4_INCLUDE_DIRS}
+)
 target_link_libraries(ratslam_pc
   ratslam
   ${IRRLICHT_LIBRARIES}
   ${OPENGL_LIBRARIES}
-  ${OpenCV_LIBRARIES}
+  ${OpenCV4_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
+# Executável ratslam_em
 add_executable(ratslam_em src/main_em.cpp)
 ament_target_dependencies(ratslam_em ${ament_dependencies})
+target_include_directories(ratslam_em PUBLIC
+  include 
+  ${Boost_INCLUDE_DIRS}
+  ${OpenCV4_INCLUDE_DIRS}
+  ${IRRLICHT_INCLUDE_DIRS}
+)
 target_link_libraries(ratslam_em
   ratslam
   ${IRRLICHT_LIBRARIES}
   ${OPENGL_LIBRARIES}
-  ${OpenCV_LIBRARIES}
+  ${OpenCV4_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
+# Executável ratslam_vo
 add_executable(ratslam_vo src/main_vo.cpp)
 ament_target_dependencies(ratslam_vo ${ament_dependencies})
+target_include_directories(ratslam_vo PUBLIC
+  include 
+  ${Boost_INCLUDE_DIRS}
+  ${OpenCV4_INCLUDE_DIRS}
+)
 target_link_libraries(ratslam_vo
   ratslam
   ${IRRLICHT_LIBRARIES}
   ${OPENGL_LIBRARIES}
-  ${OpenCV_LIBRARIES}
+  ${OpenCV4_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
+# Instalação dos binários
 install(TARGETS 
   ratslam_lv
   ratslam_pc
@@ -104,6 +126,7 @@ install(TARGETS
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
+# Instalação de diretórios de launch
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
