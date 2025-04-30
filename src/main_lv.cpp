@@ -144,15 +144,14 @@ int main(int argc, char * argv[])
   RCLCPP_INFO(ratslam_view_template->get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
   RCLCPP_INFO(ratslam_view_template->get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
 
-  if (argc < 2)
-  {
-    RCLCPP_FATAL(ratslam_view_template->get_logger(), "Missing <config_file>.");
-    exit(-1);
-  }
+  std::string config_file;
+  ratslam_view_template->declare_parameter<std::string>("config_file", "");
+  ratslam_view_template->get_parameter("config_file", config_file);
+
   std::string topic_root = "";
 
   boost::property_tree::ptree settings, ratslam_settings, general_settings;
-  read_ini(argv[1], settings);
+  read_ini(config_file, settings);
 
   get_setting_child(general_settings, settings, "general", true);
   get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string)"");

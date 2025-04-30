@@ -1,10 +1,13 @@
-<!-- <launch>
+<launch>
+    <!-- ros2 bag play /home/borges/humble_ws/src/ratslam/bags/irat_aus_28112011/irat_aus_28112011.db3 __clock -->
     <node
         pkg="ratslam"
         exec="ratslam_lv"
         name="RatSLAMLocalViewCells"
         output="screen"
-        args="$(find ratslam)/config/config_irataus.txt _image_transport:=compressed">
+        args="--ros-args --remap _image_transport:=compressed">
+        <param name="config_file" value="$(find-pkg-share ratslam)/config/config_irataus.txt.in" />
+        <param name="use_sim_time" value="true" />
     </node>
 
     <node
@@ -12,30 +15,29 @@
         exec="ratslam_pc"
         name="RatSLAMPoseCells"
         output="screen"
-        args="$(find ratslam)/config/config_irataus.txt _image_transport:=compressed">
+        args="--ros-args --remap _image_transport:=compressed">
+        <param name="config_file" value="$(find-pkg-share ratslam)/config/config_irataus.txt.in" />
+        <param name="use_sim_time" value="true" />
     </node>
 
     <node
-        pkg="ratslam_ros"
+        pkg="ratslam"
         exec="ratslam_em"
         name="RatSLAMExperienceMap"
         output="screen"
-        args="$(find ratslam)/config/config_irataus.txt _image_transport:=compressed">
-    </node>
-</launch> -->
-
- 
-<arg name="config_file" default="$(find-pkg-share ratslam)/config/config_irataus.yaml"/>
-<launch>
+        args="--ros-args --remap _image_transport:=compressed">
+        <param name="config_file" value="$(find-pkg-share ratslam)/config/config_irataus.txt.in" />
+        <param name="use_sim_time" value="true" />
+    </node>      
+            
+<!--  
+    <arg name="config_file" default="$(find-pkg-share ratslam)/config/config_irataus.yaml"/>
     <node
         pkg="ratslam"
         exec="ratslam_lv"
         name="RatSLAMLocalViewCells"
 		namespace="irat_red"
         output="screen">
-
-		<param from="$(var config_file)"/>
-    </node>
+    </node> -->
 </launch>
 
- 

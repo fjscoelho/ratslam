@@ -208,8 +208,8 @@ private:
     // Calculate the time difference
     rclcpp::Duration time_diff = msg_time - current_time;
 
-RCLCPP_INFO(this->get_logger(), 
-      "Timer counter = %f", time_diff.seconds());
+    RCLCPP_INFO(this->get_logger(), 
+          "Timer counter = %f", time_diff.seconds());
 
     if (time_diff.seconds() > duration)
     {
@@ -314,14 +314,13 @@ int main(int argc, char * argv[])
   RCLCPP_INFO(ratslam_experience_map->get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
   RCLCPP_INFO(ratslam_experience_map->get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
 
-  if (argc < 2)
-  {
-    RCLCPP_FATAL(ratslam_experience_map->get_logger(), "Missing <config_file>.");
-    exit(-1);
-  }
+  std::string config_file;
+  ratslam_experience_map->declare_parameter<std::string>("config_file", "");
+  ratslam_experience_map->get_parameter("config_file", config_file);
+
   std::string topic_root = "";
   boost::property_tree::ptree settings, general_settings, ratslam_settings;
-  read_ini(argv[1], settings);
+  read_ini(config_file, settings);
 
   get_setting_child(ratslam_settings, settings, "ratslam", true);
   get_setting_child(general_settings, settings, "general", true);

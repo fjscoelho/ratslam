@@ -34,7 +34,8 @@ using boost::property_tree::ptree;
 // #include <nav_msgs/msg/odometry.hpp>
 
 #include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
+// #include <opencv2/opencv.hpp>
+// #include <opencv2/highgui/highgui.hpp>
 
 namespace ratslam {
 
