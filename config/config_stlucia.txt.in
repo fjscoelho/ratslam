@@ -45,5 +45,5 @@ vt_window_width=640
 vt_window_height=900
 exp_map_size=500
 posecells_size=250
-media_path=@MEDIA_PATH@
+media_path=/home/j/rolling_ws/src/ratslam/src/media
 image_file=irat_sm.tga

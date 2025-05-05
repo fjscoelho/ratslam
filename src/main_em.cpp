@@ -26,6 +26,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+ #include <chrono>
+#include <fstream>
+
 #include "ratslam/utils.h"
 
 #include <boost/property_tree/ini_parser.hpp>
@@ -49,6 +52,8 @@ ratslam::ExperienceMapScene *ems;
 bool use_graphics;
 //#endif
 
+std::ofstream outfile_action("tempo_execucao_ros2_action_callback_em.txt");
+std::ofstream outfile_odo("tempo_execucao_odo_ros2_callback_em.txt");
 using namespace ratslam;
 
 class RatSLAMExperienceMap : public rclcpp::Node
@@ -57,31 +62,62 @@ public:
   RatSLAMExperienceMap()
     : Node("ratslam_experience_map"), first_callback_(true)
   {
+    RCLCPP_INFO(get_logger(), "openRatSLAM Copyright (C) 2012 David Ball and Scott Heath");
+    RCLCPP_INFO(get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
+    RCLCPP_INFO(get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
+  
+    std::string config_file;
+    declare_parameter<std::string>("config_file", "");
+    get_parameter("config_file", config_file);
+  
+    boost::property_tree::ptree settings, general_settings, ratslam_settings;
+    read_ini(config_file, settings);
+  
+    std::string topic_root;
+    get_setting_child(ratslam_settings, settings, "ratslam", true);
+    get_setting_child(general_settings, settings, "general", true);
+    get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string)"");
+  
+    //#ifdef HAVE_IRRLICHT
+    boost::property_tree::ptree draw_settings;
+    get_setting_child(draw_settings, settings, "draw", true);
+    get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
+  
+    setEM(ratslam_settings);
+  
+    if (use_graphics)
+    {
+      ems = new ratslam::ExperienceMapScene(draw_settings, getEM());
+    }
+    //#endif
+  
     odo_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "/irat_red/odom", 10, std::bind(
+      topic_root + "/odom", 10, std::bind(
         &RatSLAMExperienceMap::odo_callback, this, std::placeholders::_1));
 
     action_sub_ = this->create_subscription<topological_msgs::msg::TopologicalAction>(
-      "/PoseCell/TopologicalAction", 1, std::bind(
+      topic_root + "/PoseCell/TopologicalAction", 1, std::bind(
       &RatSLAMExperienceMap::action_callback, this, std::placeholders::_1));
 
     goal_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-      "/ExperienceMap/SetGoalPose", 1, std::bind(
+      topic_root + "/ExperienceMap/SetGoalPose", 1, std::bind(
       &RatSLAMExperienceMap::set_goal_pose_callback, this, std::placeholders::_1));
                                                                 
 
     em_pub_ = this->create_publisher<topological_msgs::msg::TopologicalMap>(
-      "/PoseCell/TopologicalMap", 1);
+      topic_root + "/PoseCell/TopologicalMap", 1);
 
     goal_path_pub_ = this->create_publisher<nav_msgs::msg::Path>(
-      "/ExperienceMap/PathToGoal", 1);
+      topic_root + "/ExperienceMap/PathToGoal", 1);
 
     em_markers_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
-      "/ExperienceMap/MapMarker", 1);
+      topic_root + "/ExperienceMap/MapMarker", 1);
 
     pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
-      "/ExperienceMap/RobotPose", 1);
+      topic_root + "/ExperienceMap/RobotPose", 1);
 
+    counter_odo_ = 0;
+    counter_action_ = 0;
   }
 
   void setEM(boost::property_tree::ptree settings)
@@ -93,12 +129,16 @@ public:
   {
     return em_;
   }
+
 private:
   void odo_callback(nav_msgs::msg::Odometry::SharedPtr msg)
   {
-    RCLCPP_INFO(this->get_logger(), 
-      "EM:odo_callback{ linear velocity = %f, angular velocity = %f", 
-      msg->twist.twist.linear.x, msg->twist.twist.angular.z);
+    // Captura o tempo inicial
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // RCLCPP_INFO(this->get_logger(), 
+    //   "EM:odo_callback{ linear velocity = %f, angular velocity = %f", 
+    //   msg->twist.twist.linear.x, msg->twist.twist.angular.z);
 
     // Calculate the sampling time of odo_callback function
     auto current_time = this->now();
@@ -108,8 +148,8 @@ private:
       auto current_time = this->now();
       time_diff = (double) (current_time.nanoseconds() - previous_time_.nanoseconds());
       time_diff = time_diff / 1000000000.0; // seconds
-      RCLCPP_INFO(this->get_logger(), 
-        "Duration since last callback: %lf s", time_diff);
+      // RCLCPP_INFO(this->get_logger(), 
+      //   "Duration since last callback: %lf s", time_diff);
       previous_time_  = current_time;
 
       double linear_velocity = msg->twist.twist.linear.x;
@@ -159,13 +199,25 @@ private:
       first_callback_ = false;
       previous_time_ = this->now();
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    // Calcula a duração e exibe em milissegundos
+    std::chrono::duration<double, std::milli> duration = end - start;
+    counter_odo_++;
+    // Abre um arquivo para escrita
+    if (outfile_odo.is_open()) {
+      outfile_odo << counter_odo_ << ". Tempo de execução (odo_callback) em em: " << duration.count() << " ms" << std::endl;
+    }
   }
 
   void action_callback(topological_msgs::msg::TopologicalAction::SharedPtr action)
   {
-    RCLCPP_INFO(this->get_logger(), 
-      "EM:action_callback{action = %d, src = %d, dst = %d", 
-      action->action, action->src_id, action->dest_id);
+    // Captura o tempo inicial
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // RCLCPP_INFO(this->get_logger(), 
+    //   "EM:action_callback{action = %d, src = %d, dst = %d", 
+    //   action->action, action->src_id, action->dest_id);
 
     switch (action->action)
     {
@@ -199,7 +251,7 @@ private:
     pose_output.pose.orientation.w = cos(em_->get_experience(em_->get_current_id())->th_rad / 2.0);
     pose_pub_->publish(pose_output);
 
-    double duration = 30.0;
+    double dur = 30.0;
 
     // Extract timestamp from the message header
     rclcpp::Time msg_time(action->header.stamp);
@@ -208,10 +260,10 @@ private:
     // Calculate the time difference
     rclcpp::Duration time_diff = msg_time - current_time;
 
-    RCLCPP_INFO(this->get_logger(), 
-          "Timer counter = %f", time_diff.seconds());
+    // RCLCPP_INFO(this->get_logger(), 
+    //       "Timer counter = %f", time_diff.seconds());
 
-    if (time_diff.seconds() > duration)
+    if (time_diff.seconds() > dur)
     {
       current_time = msg_time;
 
@@ -276,13 +328,22 @@ private:
 
     em_markers_pub_->publish(em_marker);
 
-  //#ifdef HAVE_IRRLICHT
+    //#ifdef HAVE_IRRLICHT
     if (use_graphics)
     {
       ems->update_scene();
       ems->draw_all();
     }
-  //#endif
+    //#endif
+
+    auto end = std::chrono::high_resolution_clock::now();
+    // Calcula a duração e exibe em milissegundos
+    std::chrono::duration<double, std::milli> duration = end - start;
+    counter_action_++;
+    // Abre um arquivo para escrita
+    if (outfile_action.is_open()) {
+      outfile_action << counter_action_ << ". Tempo de execução (odo_callback) em em: " << duration.count() << " ms" << std::endl;
+    }
   }
 
   void set_goal_pose_callback(geometry_msgs::msg::PoseStamped::SharedPtr pose)
@@ -302,6 +363,8 @@ private:
   bool first_callback_;
   ratslam::ExperienceMap *em_;
   double timer_;
+  uint counter_odo_;
+  uint counter_action_;
 };
 
 
@@ -309,37 +372,6 @@ int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
   auto ratslam_experience_map = std::make_shared<RatSLAMExperienceMap>();
-
-  RCLCPP_INFO(ratslam_experience_map->get_logger(), "openRatSLAM Copyright (C) 2012 David Ball and Scott Heath");
-  RCLCPP_INFO(ratslam_experience_map->get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
-  RCLCPP_INFO(ratslam_experience_map->get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
-
-  std::string config_file;
-  ratslam_experience_map->declare_parameter<std::string>("config_file", "");
-  ratslam_experience_map->get_parameter("config_file", config_file);
-
-  std::string topic_root = "";
-  boost::property_tree::ptree settings, general_settings, ratslam_settings;
-  read_ini(config_file, settings);
-
-  get_setting_child(ratslam_settings, settings, "ratslam", true);
-  get_setting_child(general_settings, settings, "general", true);
-  get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string)"");
-
-//#ifdef HAVE_IRRLICHT
-  boost::property_tree::ptree draw_settings;
-  get_setting_child(draw_settings, settings, "draw", true);
-  get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
-
-  ratslam_experience_map->setEM(ratslam_settings);
-
-  if (use_graphics)
-  {
-    ems = new ratslam::ExperienceMapScene(draw_settings, 
-      ratslam_experience_map->getEM());
-  }
-//#endif
-
   rclcpp::spin(ratslam_experience_map);
   rclcpp::shutdown();
 

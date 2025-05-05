@@ -27,11 +27,13 @@
  */
 
 #include <iostream>
+#include <chrono>
+#include <fstream>
 using namespace std;
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 // #include <sensor_msgs/image_encodings.h>
 
@@ -44,7 +46,7 @@ using namespace std;
 #include <sensor_msgs/msg/compressed_image.hpp>
 #include <topological_msgs/msg/view_template.hpp>
 
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 
 #include "ratslam/local_view_match.h"
 
@@ -54,7 +56,7 @@ ratslam::LocalViewScene *lvs = NULL;
 bool use_graphics;
 // #endif
 
-
+std::ofstream outfile("tempo_execucao_ros2_image_callback_lv.txt");
 using namespace ratslam;
 ratslam::LocalViewMatch * lv = NULL;
 
@@ -64,13 +66,42 @@ class RatSLAMViewTemplate : public rclcpp::Node
 public:
   RatSLAMViewTemplate() : rclcpp::Node("ratslam_view_template")
   {
+    RCLCPP_INFO(get_logger(), "openRatSLAM Copyright (C) 2012 David Ball and Scott Heath");
+    RCLCPP_INFO(get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
+    RCLCPP_INFO(get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
+  
+    std::string config_file;
+    declare_parameter<std::string>("config_file", "");
+    get_parameter("config_file", config_file);
+
+    boost::property_tree::ptree settings, ratslam_settings, general_settings;
+    read_ini(config_file, settings);
+  
+    std::string topic_root;
+    get_setting_child(general_settings, settings, "general", true);
+    get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string)"");
+    get_setting_child(ratslam_settings, settings, "ratslam", true);
+
+    // #ifdef HAVE_IRRLICHT
+    boost::property_tree::ptree draw_settings;
+    get_setting_child(draw_settings, settings, "draw", true);
+    get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
+  
+    setLV(ratslam_settings);
+    if (use_graphics) {
+      lvs = new ratslam::LocalViewScene(draw_settings, 
+        getLV());
+    }
+    // #endif
+
     // image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
     //       "/camera/image", 10, std::bind(&RatSLAMViewTemplate::image_callback, this, std::placeholders::_1));
 
     compressed_image_sub_ = this->create_subscription<sensor_msgs::msg::CompressedImage>(
-          "/irat_red/camera/image/compressed", 10, std::bind(&RatSLAMViewTemplate::image_callback, this, std::placeholders::_1));
+      topic_root + "/camera/image/compressed", 10, std::bind(&RatSLAMViewTemplate::image_callback, this, std::placeholders::_1));
 
-    view_template_pub_ = this->create_publisher<topological_msgs::msg::ViewTemplate>("/irat_red/LocalView/Template", 1);
+    view_template_pub_ = this->create_publisher<topological_msgs::msg::ViewTemplate>(
+      topic_root + "/LocalView/Template", 1);
 
     counter_ = 0;
   }
@@ -84,13 +115,16 @@ public:
   {
     return lv_;
   }
+
 private:
 
   void image_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
   {
+    // Captura o tempo inicial
+    auto start = std::chrono::high_resolution_clock::now();
     // msg (CompressedImage) does not have enconding neither width or height
     counter_++;
-    RCLCPP_INFO(this->get_logger(), "LV:image_callback{%d}", counter_);
+    // RCLCPP_INFO(this->get_logger(), "LV:image_callback{%d}", counter_);
 
     cv_bridge::CvImagePtr cv_ptr;
     sensor_msgs::msg::Image::SharedPtr image_msg;
@@ -124,6 +158,14 @@ private:
       lvs->draw_all();
     }
 
+    // Captura o tempo final
+    auto end = std::chrono::high_resolution_clock::now();
+    // Calcula a duração e exibe em milissegundos
+    std::chrono::duration<double, std::milli> duration = end - start;
+    // Abre um arquivo para escrita
+    if (outfile.is_open()) {
+        outfile << counter_ << ". Tempo de execução (image_callback) em lv: " << duration.count() << " ms" << std::endl;
+    }
   }
 
   // rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
@@ -139,36 +181,6 @@ int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
   auto ratslam_view_template = std::make_shared<RatSLAMViewTemplate>();
-
-  RCLCPP_INFO(ratslam_view_template->get_logger(), "openRatSLAM Copyright (C) 2012 David Ball and Scott Heath");
-  RCLCPP_INFO(ratslam_view_template->get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
-  RCLCPP_INFO(ratslam_view_template->get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
-
-  std::string config_file;
-  ratslam_view_template->declare_parameter<std::string>("config_file", "");
-  ratslam_view_template->get_parameter("config_file", config_file);
-
-  std::string topic_root = "";
-
-  boost::property_tree::ptree settings, ratslam_settings, general_settings;
-  read_ini(config_file, settings);
-
-  get_setting_child(general_settings, settings, "general", true);
-  get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string)"");
-  get_setting_child(ratslam_settings, settings, "ratslam", true);
-
-  // #ifdef HAVE_IRRLICHT
-  boost::property_tree::ptree draw_settings;
-  get_setting_child(draw_settings, settings, "draw", true);
-  get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
-
-  ratslam_view_template->setLV(ratslam_settings);
-  if (use_graphics) {
-    lvs = new ratslam::LocalViewScene(draw_settings, 
-      ratslam_view_template->getLV());
-  }
-  // #endif
-
   rclcpp::spin(ratslam_view_template);
   rclcpp::shutdown();
 

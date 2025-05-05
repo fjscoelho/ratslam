@@ -26,6 +26,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <iostream>
+#include <chrono>
+#include <fstream>
 using namespace std;
 
 #include "ratslam/utils.h"
@@ -46,6 +48,8 @@ ratslam::PosecellScene *pcs;
 bool use_graphics;
 //#endif
 
+std::ofstream outfile_vt("tempo_execucao_ros2_template_callback_pc.txt");
+std::ofstream outfile_odo("tempo_execucao_ros2_odo_callback_pc.txt");
 using namespace ratslam;
 
 class RatSLAMPoseCells : public rclcpp::Node
@@ -54,13 +58,45 @@ public:
   RatSLAMPoseCells() 
     : Node("ratslam_pose_cells"), first_callback_(true)
   { 
-    pc_pub_ = this->create_publisher<topological_msgs::msg::TopologicalAction>("/PoseCell/TopologicalAction", 1);
+    RCLCPP_INFO(get_logger(), "openRatSLAM Copyright (C) 2012 David Ball and Scott Heath");
+    RCLCPP_INFO(get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
+    RCLCPP_INFO(get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
+  
+    std::string config_file;
+    declare_parameter<std::string>("config_file", "");
+    get_parameter("config_file", config_file);
+  
+    boost::property_tree::ptree settings, ratslam_settings, general_settings;
+    read_ini(config_file, settings);
+  
+    std::string topic_root;
+    get_setting_child(ratslam_settings, settings, "ratslam", true);
+    get_setting_child(general_settings, settings, "general", true);
+    get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string) "");
+  
+    //#ifdef HAVE_IRRLICHT
+    boost::property_tree::ptree draw_settings;
+    get_setting_child(draw_settings, settings, "draw", true);
+    get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
+    
+    setPC(ratslam_settings);
+    if (use_graphics)
+    {
+      pcs = new ratslam::PosecellScene(draw_settings, 
+        getPC());
+    }
+    //#endif
+
+    pc_pub_ = this->create_publisher<topological_msgs::msg::TopologicalAction>(topic_root + "/PoseCell/TopologicalAction", 1);
   
     odo_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "/irat_red/odom", 10, std::bind(&RatSLAMPoseCells::odo_callback, this, std::placeholders::_1));
+      topic_root + "/odom", 10, std::bind(&RatSLAMPoseCells::odo_callback, this, std::placeholders::_1));
 
     template_sub_ = this->create_subscription<topological_msgs::msg::ViewTemplate>(
-      "/irat_red/LocalView/Template", 10, std::bind(&RatSLAMPoseCells::template_callback, this, std::placeholders::_1));
+      topic_root + "/LocalView/Template", 10, std::bind(&RatSLAMPoseCells::template_callback, this, std::placeholders::_1));
+
+    counter_odo_ = 0;
+    counter_vt_ = 0;
   }
 
   void setPC(boost::property_tree::ptree settings)
@@ -72,9 +108,13 @@ public:
   {
     return pc_;
   }
+
 private:
   void odo_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
   {
+    // Captura o tempo inicial
+    auto start = std::chrono::high_resolution_clock::now();
+
     // Calculate the sampling time of odo_callback function
     auto current_time = this->now();
     double time_diff;
@@ -82,15 +122,15 @@ private:
       auto current_time = this->now();
       time_diff = (double) (current_time.nanoseconds() - previous_time_.nanoseconds());
       time_diff = time_diff / 1000000000.0; // seconds
-      RCLCPP_INFO(this->get_logger(), 
-        "Duration since last callback: %lf s", time_diff);
+      // RCLCPP_INFO(this->get_logger(), 
+      //   "Duration since last callback: %lf s", time_diff);
       previous_time_  = current_time;
 
       double linear_velocity = msg->twist.twist.linear.x;
       double angular_velocity = msg->twist.twist.angular.z;
-      RCLCPP_INFO(this->get_logger(), 
-        "PC:odo_callback{linear velocity: %f, angular velocity: %f}", linear_velocity, 
-        angular_velocity);
+      // RCLCPP_INFO(this->get_logger(), 
+      //   "PC:odo_callback{linear velocity: %f, angular velocity: %f}", linear_velocity, 
+      //   angular_velocity);
 
       // Execute odometry (motion model)
       pc_->on_odo(linear_velocity, angular_velocity, time_diff);
@@ -105,9 +145,9 @@ private:
         pc_output.dest_id = pc_->get_current_exp_id();
         pc_output.relative_rad = pc_->get_relative_rad();
         
-        RCLCPP_INFO(this->get_logger(), 
-          "PC:action = %d, src = %u, dest = %u", pc_output.action, 
-          pc_output.src_id, pc_output.dest_id);
+        // RCLCPP_INFO(this->get_logger(), 
+        //   "PC:action = %d, src = %u, dest = %u", pc_output.action, 
+        //   pc_output.src_id, pc_output.dest_id);
 
         pc_pub_->publish(pc_output);
       }
@@ -123,12 +163,24 @@ private:
       first_callback_ = false;
       previous_time_ = this->now();
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    // Calcula a duração e exibe em milissegundos
+    std::chrono::duration<double, std::milli> duration = end - start;
+    counter_odo_++;
+    // Abre um arquivo para escrita
+    if (outfile_odo.is_open()) {
+      outfile_odo << counter_odo_ << ". Tempo de execução (odo_callback) em pc: " << duration.count() << " ms" << std::endl;
+    }
   }
 
   void template_callback(const topological_msgs::msg::ViewTemplate::SharedPtr msg)
   {
-    RCLCPP_INFO(this->get_logger(), 
-      "PC:vt_callback{ id = %d, rad = %f", msg->current_id, msg->relative_rad);
+    // Captura o tempo inicial
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // RCLCPP_INFO(this->get_logger(), 
+    //   "PC:vt_callback{ id = %d, rad = %f", msg->current_id, msg->relative_rad);
 
     pc_->on_view_template(msg->current_id, msg->relative_rad);
 
@@ -140,6 +192,15 @@ private:
     }
   //#endif
 
+    // Captura o tempo final
+    auto end = std::chrono::high_resolution_clock::now();
+    // Calcula a duração e exibe em milissegundos
+    std::chrono::duration<double, std::milli> duration = end - start;
+    counter_vt_++;
+    // Abre um arquivo para escrita
+    if (outfile_vt.is_open()) {
+      outfile_vt << counter_vt_ << ". Tempo de execução (template_callback) em pc: " << duration.count() << " ms" << std::endl;
+    }
   }
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odo_sub_;
@@ -148,42 +209,14 @@ private:
   rclcpp::Time previous_time_;
   bool first_callback_;
   ratslam::PosecellNetwork * pc_;
+  uint counter_odo_;
+  uint counter_vt_;
 };
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
   auto ratslam_pose_cells = std::make_shared<RatSLAMPoseCells>();
-
-  RCLCPP_INFO(ratslam_pose_cells->get_logger(), "openRatSLAM Copyright (C) 2012 David Ball and Scott Heath");
-  RCLCPP_INFO(ratslam_pose_cells->get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
-  RCLCPP_INFO(ratslam_pose_cells->get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
-
-  std::string config_file;
-  ratslam_pose_cells->declare_parameter<std::string>("config_file", "");
-  ratslam_pose_cells->get_parameter("config_file", config_file);
-
-  std::string topic_root = "";
-  boost::property_tree::ptree settings, ratslam_settings, general_settings;
-  read_ini(config_file, settings);
-
-  get_setting_child(ratslam_settings, settings, "ratslam", true);
-  get_setting_child(general_settings, settings, "general", true);
-  get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string) "");
-
-//#ifdef HAVE_IRRLICHT
-  boost::property_tree::ptree draw_settings;
-  get_setting_child(draw_settings, settings, "draw", true);
-  get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
-  
-  ratslam_pose_cells->setPC(ratslam_settings);
-  if (use_graphics)
-  {
-	  pcs = new ratslam::PosecellScene(draw_settings, 
-      ratslam_pose_cells->getPC());
-  }
-//#endif
-  
   rclcpp::spin(ratslam_pose_cells);
   rclcpp::shutdown();
 
