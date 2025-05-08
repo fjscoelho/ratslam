@@ -18,7 +18,7 @@ exp_delta_pc_threshold = 1.0
 pc_vt_inject_energy = 0.2
 vt_active_decay = 1.0
 exp_loops=50
-exp_initial_em_deg=133
+exp_initial_em_deg=10
 
 [draw]
 enable=1
