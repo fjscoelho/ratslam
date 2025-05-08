@@ -1,31 +1,4 @@
-/*
- * openRatSLAM
- *
- * utils - General purpose utility helper functions mainly for angles and readings settings
- *
- * Copyright (C) 2012
- * David Ball (david.ball@qut.edu.au) (1), Scott Heath (scott.heath@uqconnect.edu.au) (2)
- *
- * RatSLAM algorithm by:
- * Michael Milford (1) and Gordon Wyeth (1) ([michael.milford, gordon.wyeth]@qut.edu.au)
- *
- * 1. Queensland University of Technology, Australia
- * 2. The University of Queensland, Australia
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
+#include <fstream>
 #include <iostream>
 using namespace std;
 
@@ -35,7 +8,6 @@ using namespace std;
 #include <boost/property_tree/ini_parser.hpp>
 
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/compressed_image.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 
@@ -68,7 +40,7 @@ public:
     ratslam::get_setting_child(general_settings, settings, "general", true);
     ratslam::get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string) "");
   
-    vo = new ratslam::VisualOdometry(vo_settings);
+    vo_ = new ratslam::VisualOdometry(vo_settings);
   
     compressed_image_sub_ = this->create_subscription<sensor_msgs::msg::CompressedImage>(
       topic_root + "/camera/image/compressed", 10, std::bind(&RatSLAMVisualOdometry::image_callback, this, std::placeholders::_1));
@@ -102,12 +74,12 @@ private:
 
     image_msg = cv_ptr->toImageMsg();
     nav_msgs::msg::Odometry odom_output;
-
-    vo->on_image(&msg->data[0], (image_msg->encoding == "bgr8" ? false : true), 
+    
+    vo_->on_image(&image_msg->data[0], (image_msg->encoding == "bgr8" ? false : true), 
       image_msg->width, image_msg->height, &odom_output.twist.twist.linear.x, 
       &odom_output.twist.twist.angular.z);
 
-    odom_output.header.stamp = this->now();
+    odom_output.header.stamp = image_msg->header.stamp;
 
     visual_odom_pub_->publish(odom_output);
   }
@@ -115,7 +87,7 @@ private:
   uint counter_;
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_image_sub_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr visual_odom_pub_;
-  ratslam::VisualOdometry *vo;
+  ratslam::VisualOdometry *vo_;
 };
 
 
