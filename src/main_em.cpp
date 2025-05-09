@@ -1,380 +1,186 @@
-/*
- * openRatSLAM
- *
- * utils - General purpose utility helper functions mainly for angles and readings settings
- *
- * Copyright (C) 2012
- * David Ball (david.ball@qut.edu.au) (1), Scott Heath (scott.heath@uqconnect.edu.au) (2)
- *
- * RatSLAM algorithm by:
- * Michael Milford (1) and Gordon Wyeth (1) ([michael.milford, gordon.wyeth]@qut.edu.au)
- *
- * 1. Queensland University of Technology, Australia
- * 2. The University of Queensland, Australia
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
- #include <chrono>
-#include <fstream>
-
 #include "ratslam/utils.h"
-
 #include <boost/property_tree/ini_parser.hpp>
 
-#include "ratslam/experience_map.h"
-
 #include <rclcpp/rclcpp.hpp>
-#include <topological_msgs/msg/topological_action.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-#include "graphics/experience_map_scene.h"
+#include <topological_msgs/msg/topological_action.hpp>
 #include <topological_msgs/msg/topological_map.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <tf2_ros/transform_broadcaster.h>
-
 #include <visualization_msgs/msg/marker.hpp>
 
-//#ifdef HAVE_IRRLICHT
+#include "ratslam/experience_map.h"
+
+//#if HAVE_IRRLICHT
 #include "graphics/experience_map_scene.h"
-ratslam::ExperienceMapScene *ems;
+ratslam::ExperienceMapScene *ems = nullptr;
 bool use_graphics;
 //#endif
 
-std::ofstream outfile_action("tempo_execucao_ros2_action_callback_em.txt");
-std::ofstream outfile_odo("tempo_execucao_odo_ros2_callback_em.txt");
 using namespace ratslam;
 
-class RatSLAMExperienceMap : public rclcpp::Node
-{
+class RatSLAMExperienceMap : public rclcpp::Node {
 public:
-  RatSLAMExperienceMap()
-    : Node("ratslam_experience_map"), first_callback_(true)
-  {
-    RCLCPP_INFO(get_logger(), "openRatSLAM Copyright (C) 2012 David Ball and Scott Heath");
-    RCLCPP_INFO(get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
-    RCLCPP_INFO(get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
-  
-    std::string config_file;
-    declare_parameter<std::string>("config_file", "");
-    get_parameter("config_file", config_file);
-  
-    boost::property_tree::ptree settings, general_settings, ratslam_settings;
-    read_ini(config_file, settings);
-  
-    std::string topic_root;
-    get_setting_child(ratslam_settings, settings, "ratslam", true);
-    get_setting_child(general_settings, settings, "general", true);
-    get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string)"");
-  
-    //#ifdef HAVE_IRRLICHT
-    boost::property_tree::ptree draw_settings;
-    get_setting_child(draw_settings, settings, "draw", true);
-    get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
-  
-    setEM(ratslam_settings);
-  
-    if (use_graphics)
-    {
-      ems = new ratslam::ExperienceMapScene(draw_settings, getEM());
+    RatSLAMExperienceMap() : Node("ratslam_experience_map") {
+        RCLCPP_INFO(this->get_logger(), "openRatSLAM Copyright (C) 2012 David Ball and Scott Heath");
+        RCLCPP_INFO(this->get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
+        RCLCPP_INFO(this->get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
+
+        this->declare_parameter<std::string>("config_file", "");
+        std::string config_file;
+        this->get_parameter("config_file", config_file);
+
+        std::string topic_root;
+        boost::property_tree::ptree settings, general_settings, ratslam_settings;
+        read_ini(config_file, settings);
+        get_setting_child(general_settings, settings, "general", true);
+        get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string)"");
+        get_setting_child(ratslam_settings, settings, "ratslam", true);
+
+        em_ = std::make_unique<ratslam::ExperienceMap>(ratslam_settings);
+
+        pub_em_ = this->create_publisher<topological_msgs::msg::TopologicalMap>(topic_root + "/ExperienceMap/Map", 10);
+        pub_em_markers_ = this->create_publisher<visualization_msgs::msg::Marker>(topic_root + "/ExperienceMap/MapMarker", 10);
+        pub_pose_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(topic_root + "/ExperienceMap/RobotPose", 10);
+        pub_goal_path_ = this->create_publisher<nav_msgs::msg::Path>(topic_root + "/ExperienceMap/PathToGoal", 10);
+
+        sub_odometry_ = this->create_subscription<nav_msgs::msg::Odometry>(
+            topic_root + "/odom", 10, std::bind(&RatSLAMExperienceMap::odo_callback, this, std::placeholders::_1));
+        sub_action_ = this->create_subscription<topological_msgs::msg::TopologicalAction>(
+            topic_root + "/PoseCell/TopologicalAction", 10, std::bind(&RatSLAMExperienceMap::action_callback, this, std::placeholders::_1));
+        sub_goal_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+            topic_root + "/ExperienceMap/SetGoalPose", 10, std::bind(&RatSLAMExperienceMap::set_goal_pose_callback, this, std::placeholders::_1));
+
+        //#ifdef HAVE_IRRLICHT
+        boost::property_tree::ptree draw_settings;
+        get_setting_child(draw_settings, settings, "draw", true);
+        get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
+        if (use_graphics) {
+            ems = new ratslam::ExperienceMapScene(draw_settings, em_.get());
+        }
+        //#endif
     }
-    //#endif
-  
-    odo_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      topic_root + "/odom", 10, std::bind(
-        &RatSLAMExperienceMap::odo_callback, this, std::placeholders::_1));
-
-    action_sub_ = this->create_subscription<topological_msgs::msg::TopologicalAction>(
-      topic_root + "/PoseCell/TopologicalAction", 1, std::bind(
-      &RatSLAMExperienceMap::action_callback, this, std::placeholders::_1));
-
-    goal_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-      topic_root + "/ExperienceMap/SetGoalPose", 1, std::bind(
-      &RatSLAMExperienceMap::set_goal_pose_callback, this, std::placeholders::_1));
-                                                                
-
-    em_pub_ = this->create_publisher<topological_msgs::msg::TopologicalMap>(
-      topic_root + "/PoseCell/TopologicalMap", 1);
-
-    goal_path_pub_ = this->create_publisher<nav_msgs::msg::Path>(
-      topic_root + "/ExperienceMap/PathToGoal", 1);
-
-    em_markers_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
-      topic_root + "/ExperienceMap/MapMarker", 1);
-
-    pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
-      topic_root + "/ExperienceMap/RobotPose", 1);
-
-    counter_odo_ = 0;
-    counter_action_ = 0;
-  }
-
-  void setEM(boost::property_tree::ptree settings)
-  {
-    em_ = new ratslam::ExperienceMap(settings);
-  }
-
-  ratslam::ExperienceMap * getEM() 
-  {
-    return em_;
-  }
 
 private:
-  void odo_callback(nav_msgs::msg::Odometry::SharedPtr msg)
-  {
-    // Captura o tempo inicial
-    auto start = std::chrono::high_resolution_clock::now();
+    void odo_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+        RCLCPP_DEBUG(this->get_logger(), "EM:odo_callback seq=%d", msg->header.frame_id);
 
-    // RCLCPP_INFO(this->get_logger(), 
-    //   "EM:odo_callback{ linear velocity = %f, angular velocity = %f", 
-    //   msg->twist.twist.linear.x, msg->twist.twist.angular.z);
+        static rclcpp::Time prev_time(0, 0, RCL_ROS_TIME);
+        if (prev_time.nanoseconds() > 0) {
+            rclcpp::Time odo_time(msg->header.stamp.sec, msg->header.stamp.nanosec, RCL_ROS_TIME);
+            double time_diff = (odo_time - prev_time).seconds();
+            em_->on_odo(msg->twist.twist.linear.x, msg->twist.twist.angular.z, time_diff);
+        }
+        prev_time = msg->header.stamp;
+    }
 
-    // Calculate the sampling time of odo_callback function
-    auto current_time = this->now();
-    double time_diff;
-      
-    if (!first_callback_) {
-      auto current_time = this->now();
-      time_diff = (double) (current_time.nanoseconds() - previous_time_.nanoseconds());
-      time_diff = time_diff / 1000000000.0; // seconds
-      // RCLCPP_INFO(this->get_logger(), 
-      //   "Duration since last callback: %lf s", time_diff);
-      previous_time_  = current_time;
-
-      double linear_velocity = msg->twist.twist.linear.x;
-      double angular_velocity = msg->twist.twist.angular.z;
+    void action_callback(const topological_msgs::msg::TopologicalAction::SharedPtr msg) {
   
-      // Execute odometry (motion model)
-      em_->on_odo(linear_velocity, angular_velocity, time_diff);
+      switch (msg->action) {
+          case topological_msgs::msg::TopologicalAction::CREATE_NODE:
+              em_->on_create_experience(msg->dest_id);
+              em_->on_set_experience(msg->dest_id, 0);
+              break;
+          case topological_msgs::msg::TopologicalAction::CREATE_EDGE:
+              em_->on_create_link(msg->src_id, msg->dest_id, msg->relative_rad);
+              em_->on_set_experience(msg->dest_id, msg->relative_rad);
+              break;
+          case topological_msgs::msg::TopologicalAction::SET_NODE:
+              em_->on_set_experience(msg->dest_id, msg->relative_rad);
+              break;
+      }
+  
+      em_->iterate();
+  
+      // Publicação da posição do robô
+      geometry_msgs::msg::PoseStamped pose_output;
+      pose_output.header.stamp = this->get_clock()->now();
+      pose_output.pose.position.x = em_->get_experience(em_->get_current_id())->x_m;
+      pose_output.pose.position.y = em_->get_experience(em_->get_current_id())->y_m;
+      pose_output.pose.orientation.z = sin(em_->get_experience(em_->get_current_id())->th_rad / 2.0);
+      pose_output.pose.orientation.w = cos(em_->get_experience(em_->get_current_id())->th_rad / 2.0);
+  
+      pub_pose_->publish(pose_output);
+  
+      // Publicação do mapa topológico em intervalos regulares
+      static rclcpp::Time prev_pub_time(0, 0, RCL_ROS_TIME);
+      rclcpp::Time msg_time(msg->header.stamp.sec, msg->header.stamp.nanosec, RCL_ROS_TIME);
+      if (msg_time - prev_pub_time > rclcpp::Duration(std::chrono::seconds(30))) {
 
-      if (em_->get_current_goal_id() >= 0)
-      {
-
-        em_->calculate_path_to_goal(msg->header.stamp.sec);
-
-        nav_msgs::msg::Path path;
-        if (em_->get_current_goal_id() >= 0)
-        {
-          em_->get_goal_waypoint();
-
-          geometry_msgs::msg::PoseStamped pose;
-          path.header.stamp = this->now();
-          path.header.frame_id = "1";
-
-          pose.header.frame_id = "1";
-          path.poses.clear();
-          unsigned int trace_exp_id = em_->get_goals()[0];
-          while (trace_exp_id != em_->get_goal_path_final_exp())
-          {
-            pose.pose.position.x = em_->get_experience(trace_exp_id)->x_m;
-            pose.pose.position.y = em_->get_experience(trace_exp_id)->y_m;
-            path.poses.push_back(pose);
-
-            trace_exp_id = em_->get_experience(trace_exp_id)->goal_to_current;
+          prev_pub_time = msg->header.stamp;
+  
+          topological_msgs::msg::TopologicalMap em_map;
+          em_map.header.stamp = this->get_clock()->now();
+          em_map.node_count = em_->get_num_experiences();
+          em_map.node.resize(em_->get_num_experiences());
+          
+          for (int i = 0; i < em_->get_num_experiences(); i++) {
+              em_map.node[i].id = em_->get_experience(i)->id;
+              em_map.node[i].pose.position.x = em_->get_experience(i)->x_m;
+              em_map.node[i].pose.position.y = em_->get_experience(i)->y_m;
+              em_map.node[i].pose.orientation.z = sin(em_->get_experience(i)->th_rad / 2.0);
+              em_map.node[i].pose.orientation.w = cos(em_->get_experience(i)->th_rad / 2.0);
           }
-
-          goal_path_pub_->publish(path);
-
-        }
-        else
-        {
-          path.header.stamp = this->now();
-          path.header.frame_id = "1";
-          path.poses.clear();
-          goal_path_pub_->publish(path);
-        }
+  
+          em_map.edge_count = em_->get_num_links();
+          em_map.edge.resize(em_->get_num_links());
+          for (int i = 0; i < em_->get_num_links(); i++) {
+              em_map.edge[i].source_id = em_->get_link(i)->exp_from_id;
+              em_map.edge[i].destination_id = em_->get_link(i)->exp_to_id;
+              em_map.edge[i].transform.translation.x = em_->get_link(i)->d * cos(em_->get_link(i)->heading_rad);
+              em_map.edge[i].transform.translation.y = em_->get_link(i)->d * sin(em_->get_link(i)->heading_rad);
+              em_map.edge[i].transform.rotation.z = sin(em_->get_link(i)->facing_rad / 2.0);
+              em_map.edge[i].transform.rotation.w = cos(em_->get_link(i)->facing_rad / 2.0);
+          }
+  
+          pub_em_->publish(em_map);
       }
-    } else {
-      first_callback_ = false;
-      previous_time_ = this->now();
-    }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    // Calcula a duração e exibe em milissegundos
-    std::chrono::duration<double, std::milli> duration = end - start;
-    counter_odo_++;
-    // Abre um arquivo para escrita
-    if (outfile_odo.is_open()) {
-      outfile_odo << counter_odo_ << ". Tempo de execução (odo_callback) em em: " << duration.count() << " ms" << std::endl;
-    }
-  }
-
-  void action_callback(topological_msgs::msg::TopologicalAction::SharedPtr action)
-  {
-    // Captura o tempo inicial
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // RCLCPP_INFO(this->get_logger(), 
-    //   "EM:action_callback{action = %d, src = %d, dst = %d", 
-    //   action->action, action->src_id, action->dest_id);
-
-    switch (action->action)
-    {
-      case topological_msgs::msg::TopologicalAction::CREATE_NODE:
-        em_->on_create_experience(action->dest_id);
-        em_->on_set_experience(action->dest_id, 0);
-        break;
-
-      case topological_msgs::msg::TopologicalAction::CREATE_EDGE:
-        em_->on_create_link(action->src_id, action->dest_id, action->relative_rad);
-        em_->on_set_experience(action->dest_id, action->relative_rad);
-        break;
-
-      case topological_msgs::msg::TopologicalAction::SET_NODE:
-        em_->on_set_experience(action->dest_id, action->relative_rad);
-        break;
-
-    }
-
-    em_->iterate();
-
-    geometry_msgs::msg::PoseStamped pose_output;
-    pose_output.header.stamp = this->now();
-    pose_output.header.frame_id = "1";
-    pose_output.pose.position.x = em_->get_experience(em_->get_current_id())->x_m;
-    pose_output.pose.position.y = em_->get_experience(em_->get_current_id())->y_m;
-    pose_output.pose.position.z = 0;
-    pose_output.pose.orientation.x = 0;
-    pose_output.pose.orientation.y = 0;
-    pose_output.pose.orientation.z = sin(em_->get_experience(em_->get_current_id())->th_rad / 2.0);
-    pose_output.pose.orientation.w = cos(em_->get_experience(em_->get_current_id())->th_rad / 2.0);
-    pose_pub_->publish(pose_output);
-
-    double dur = 30.0;
-
-    // Extract timestamp from the message header
-    rclcpp::Time msg_time(action->header.stamp);
-    // Get current node ROS time
-    static rclcpp::Time current_time = this->now();
-    // Calculate the time difference
-    rclcpp::Duration time_diff = msg_time - current_time;
-
-    // RCLCPP_INFO(this->get_logger(), 
-    //       "Timer counter = %f", time_diff.seconds());
-
-    if (time_diff.seconds() > dur)
-    {
-      current_time = msg_time;
-
-      topological_msgs::msg::TopologicalMap em_map;
-      em_map.header.stamp = this->now();
-      em_map.node_count = em_->get_num_experiences();
-      em_map.node.resize(em_->get_num_experiences());
-      for (int i = 0; i < em_->get_num_experiences(); i++)
-      {
-        em_map.node[i].id = em_->get_experience(i)->id;
-        em_map.node[i].pose.position.x = em_->get_experience(i)->x_m;
-        em_map.node[i].pose.position.y = em_->get_experience(i)->y_m;
-        em_map.node[i].pose.orientation.x = 0;
-        em_map.node[i].pose.orientation.y = 0;
-        em_map.node[i].pose.orientation.z = sin(em_->get_experience(i)->th_rad / 2.0);
-        em_map.node[i].pose.orientation.w = cos(em_->get_experience(i)->th_rad / 2.0);
+  
+      // Publicação dos marcadores de visualização
+      visualization_msgs::msg::Marker em_marker;
+      em_marker.header.stamp = this->get_clock()->now();
+      em_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
+      em_marker.points.resize(em_->get_num_links() * 2);
+      em_marker.action = visualization_msgs::msg::Marker::ADD;
+      em_marker.scale.x = 0.01;
+      em_marker.color.a = 1;
+      em_marker.ns = "em";
+  
+      for (int i = 0; i < em_->get_num_links(); i++) {
+          em_marker.points[i * 2].x = em_->get_experience(em_->get_link(i)->exp_from_id)->x_m;
+          em_marker.points[i * 2].y = em_->get_experience(em_->get_link(i)->exp_from_id)->y_m;
+          em_marker.points[i * 2 + 1].x = em_->get_experience(em_->get_link(i)->exp_to_id)->x_m;
+          em_marker.points[i * 2 + 1].y = em_->get_experience(em_->get_link(i)->exp_to_id)->y_m;
       }
-
-      em_map.edge_count = em_->get_num_links();
-      em_map.edge.resize(em_->get_num_links());
-      for (int i = 0; i < em_->get_num_links(); i++)
-      {
-        em_map.edge[i].source_id = em_->get_link(i)->exp_from_id;
-        em_map.edge[i].destination_id = em_->get_link(i)->exp_to_id;
-        em_map.edge[i].duration = rclcpp::Duration::from_seconds(em_->get_link(i)->delta_time_s);
-        em_map.edge[i].transform.translation.x = em_->get_link(i)->d * cos(em_->get_link(i)->heading_rad);
-        em_map.edge[i].transform.translation.y = em_->get_link(i)->d * sin(em_->get_link(i)->heading_rad);
-        em_map.edge[i].transform.rotation.x = 0;
-        em_map.edge[i].transform.rotation.y = 0;
-        em_map.edge[i].transform.rotation.z = sin(em_->get_link(i)->facing_rad / 2.0);
-        em_map.edge[i].transform.rotation.w = cos(em_->get_link(i)->facing_rad / 2.0);
+  
+      pub_em_markers_->publish(em_marker);
+  
+      //#ifdef HAVE_IRRLICHT
+      if (use_graphics) {
+          ems->update_scene();
+          ems->draw_all();
       }
-      em_pub_->publish(em_map);
+      //#endif
+    }
+  
+    void set_goal_pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+        em_->add_goal(msg->pose.position.x, msg->pose.position.y);
     }
 
-    visualization_msgs::msg::Marker em_marker;
-    em_marker.header.stamp = this->now();
-    em_marker.header.frame_id = "1";
-    em_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
-    em_marker.points.resize(em_->get_num_links() * 2);
-    em_marker.action = visualization_msgs::msg::Marker::ADD;
-    em_marker.scale.x = 0.01;
-    //em_marker.scale.y = 1;
-    //em_marker.scale.z = 1;
-    em_marker.color.a = 1;
-    em_marker.ns = "em";
-    em_marker.id = 0;
-    em_marker.pose.orientation.x = 0;
-    em_marker.pose.orientation.y = 0;
-    em_marker.pose.orientation.z = 0;
-    em_marker.pose.orientation.w = 1;
-    for (int i = 0; i < em_->get_num_links(); i++)
-
-    {
-      em_marker.points[i * 2].x = em_->get_experience(em_->get_link(i)->exp_from_id)->x_m;
-      em_marker.points[i * 2].y = em_->get_experience(em_->get_link(i)->exp_from_id)->y_m;
-      em_marker.points[i * 2].z = 0;
-      em_marker.points[i * 2 + 1].x = em_->get_experience(em_->get_link(i)->exp_to_id)->x_m;
-      em_marker.points[i * 2 + 1].y = em_->get_experience(em_->get_link(i)->exp_to_id)->y_m;
-      em_marker.points[i * 2 + 1].z = 0;
-    }
-
-    em_markers_pub_->publish(em_marker);
-
-    //#ifdef HAVE_IRRLICHT
-    if (use_graphics)
-    {
-      ems->update_scene();
-      ems->draw_all();
-    }
-    //#endif
-
-    auto end = std::chrono::high_resolution_clock::now();
-    // Calcula a duração e exibe em milissegundos
-    std::chrono::duration<double, std::milli> duration = end - start;
-    counter_action_++;
-    // Abre um arquivo para escrita
-    if (outfile_action.is_open()) {
-      outfile_action << counter_action_ << ". Tempo de execução (odo_callback) em em: " << duration.count() << " ms" << std::endl;
-    }
-  }
-
-  void set_goal_pose_callback(geometry_msgs::msg::PoseStamped::SharedPtr pose)
-  {
-    em_->add_goal(pose->pose.position.x, pose->pose.position.y);
-
-  }
-
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odo_sub_;
-  rclcpp::Subscription<topological_msgs::msg::TopologicalAction>::SharedPtr action_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-  rclcpp::Publisher<topological_msgs::msg::TopologicalMap>::SharedPtr em_pub_;
-  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr goal_path_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr em_markers_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
-  rclcpp::Time previous_time_;
-  bool first_callback_;
-  ratslam::ExperienceMap *em_;
-  double timer_;
-  uint counter_odo_;
-  uint counter_action_;
+    std::unique_ptr<ratslam::ExperienceMap> em_;
+    rclcpp::Publisher<topological_msgs::msg::TopologicalMap>::SharedPtr pub_em_;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_em_markers_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pub_pose_;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pub_goal_path_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_odometry_;
+    rclcpp::Subscription<topological_msgs::msg::TopologicalAction>::SharedPtr sub_action_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr sub_goal_;
 };
 
-
-int main(int argc, char * argv[])
-{
-  rclcpp::init(argc, argv);
-  auto ratslam_experience_map = std::make_shared<RatSLAMExperienceMap>();
-  rclcpp::spin(ratslam_experience_map);
-  rclcpp::shutdown();
-
-  return 0;
+int main(int argc, char *argv[]) {
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<RatSLAMExperienceMap>();
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+    return 0;
 }
-
