@@ -16,13 +16,14 @@ vt_step_match = 1
 vt_normalisation = 0.4
 pc_vt_restore=0.04
 
+
 pc_cell_x_size = 2.0
 pc_dim_xy = 18
 exp_delta_pc_threshold = 1.0
 pc_vt_inject_energy = 0.2
 vt_active_decay = 1.0
 exp_loops=50
-exp_initial_em_deg=133
+exp_initial_em_deg=180
 
 [visual_odometry]
 vtrans_image_x_min=195
@@ -33,11 +34,11 @@ vtrans_image_y_max=430
 vrot_image_x_min=195
 vrot_image_x_max=475
 vrot_image_y_min=75
-vrot_image_y_max=430
+vrot_image_y_max=240
 
 camera_fov_deg=160
 camera_hz = 1
-vtrans_scaling = 1000
+vtrans_scaling = 100
 vtrans_max=1
 
 [draw]
