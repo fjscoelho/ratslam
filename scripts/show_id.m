@@ -29,7 +29,7 @@ close all;
 clc;
 figh = figure;
 
-vt = csvread('vt_id.csv', 1, 0);
+vt = csvread('exported_data/vt_id.csv', 1, 0);
 vt_length = length(vt);
 start = vt(1, 1);
 t1 = vt(1:vt_length, 1) - start;
@@ -38,7 +38,7 @@ vt_id = vt(1:vt_length, 3);
 plot(t1, vt_id, 'rx',"LineWidth",1.1);
 grid on
 
-em = csvread('em_id.csv', 1, 0);
+em = csvread('exported_data/em_id.csv', 1, 0);
 em_length = length(em);
 t2 = em(1:em_length, 1) - start;
 dest_id = em(1:em_length, 5);
