@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+import rclpy
+from rclpy.serialization import deserialize_message
+from topological_msgs.msg import TopologicalMap
+import sqlite3
+import csv
+from datetime import datetime
+import argparse
+
+# comand example: python3 extract_nodes_edges_map.py output_bags/surveyor_test1.bag/surveyor_test1.bag_0.db3 --nodes exported_data/nodes.csv --links exported_data/links.csv
+
+def extract_topological_data(bag_file, nodes_csv, links_csv):
+    """Extrai nós e conexões para CSVs separados"""
+    conn = sqlite3.connect(f"file:{bag_file}?mode=ro", uri=True)
+    cursor = conn.cursor()
+
+    try:
+        # write node file
+        with open(nodes_csv, 'w', newline='') as nodes_file:
+            node_writer = csv.writer(nodes_file)
+            node_writer.writerow([
+                'id', 'x', 'y', 'z',
+                'orientation_x', 'orientation_y', 'orientation_z', 'orientation_w',
+                'timestamp'
+            ])
+
+            # write link file
+            with open(links_csv, 'w', newline='') as links_file:
+                link_writer = csv.writer(links_file)
+                link_writer.writerow([
+                    'id', 'source_id', 'destination_id',
+                    'duration_sec', 'duration_nanosec', 'timestamp'
+                ])
+
+                # get all messages from topic
+                cursor.execute("""
+                    SELECT m.timestamp, m.data 
+                    FROM messages m 
+                    JOIN topics t ON m.topic_id = t.id 
+                    WHERE t.name = '/surveyor/ExperienceMap/Map'
+                    ORDER BY m.timestamp
+                    """)
+
+                for ts, data in cursor:
+                    try:
+                        msg = deserialize_message(data, TopologicalMap)
+                        timestamp = datetime.fromtimestamp(ts/1e9).isoformat()
+
+                        # Process nodes
+                        for node in msg.node:
+                            node_writer.writerow([
+                                node.id,
+                                node.pose.position.x,
+                                node.pose.position.y,
+                                node.pose.position.z,
+                                node.pose.orientation.x,
+                                node.pose.orientation.y,
+                                node.pose.orientation.z,
+                                node.pose.orientation.w,
+                                timestamp
+                            ])
+
+                        # Process edges
+                        for edge in msg.edge:
+                            link_writer.writerow([
+                                edge.id,
+                                edge.source_id,
+                                edge.destination_id,
+                                edge.duration.sec,
+                                edge.duration.nanosec,
+                                timestamp
+                            ])
+
+                    except Exception as e:
+                        print(f"Erro ao processar mensagem: {e}")
+
+        print(f"Dados salvos em:\n- Nós: {nodes_csv}\n- Conexões: {links_csv}")
+
+    finally:
+        conn.close()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Extrai dados de mapa topológico para CSV')
+    parser.add_argument('bag_file', help='Arquivo .db3 de entrada')
+    parser.add_argument('--nodes', default='nodes.csv', help='Arquivo de saída para nós')
+    parser.add_argument('--links', default='links.csv', help='Arquivo de saída para conexões')
+    
+    args = parser.parse_args()
+
+    # ROS 2 initialize to desserialization
+    rclpy.init()
+    extract_topological_data(args.bag_file, args.nodes, args.links)
+    rclpy.shutdown()
