@@ -1,9 +1,15 @@
+# Extracts GPS data from ROS 2 bag files and exports it to CSV format.
+
 from rosbags.rosbag2 import Reader
 import csv
 import struct
 from pathlib import Path
 from sensor_msgs.msg import NavSatFix
 from rclpy.serialization import deserialize_message
+import argparse
+
+# Example args:
+# python3 extract_gps_data.py ../../../bags/20250416_131706_bag_ros2 --topic /surveyor/gps_fix --gps_data exported_data/gps.csv
 
 def extract_gps(bag_path, topic, output_file):
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
@@ -27,17 +33,24 @@ def extract_gps(bag_path, topic, output_file):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description='Extract GPS data from gps_fix message to CSV')
+    parser.add_argument('bag_file', help='Path to folder that contains bag in .db3 format')
+    parser.add_argument('--topic', default='/surveyor/gps_fix', help='Topic name to extract from bag')
+    parser.add_argument('--gps_data', default='gps.csv', help='output file for gps data CSV')
+
+    args = parser.parse_args()
+
     try:
-        print("⏳ Iniciando extração de dados gps_fix...")
+        print("⏳ Starting gps_fix data extraction...")
         extract_gps(
-            '../../../bags/20250416_131706_bag_ros2',
-            '/surveyor/gps_fix',
-            'exported_data/ground_truth.csv'
+            args.bag_file,
+            args.topic,
+            args.gps_data
         )
-        print("✅ Extração concluída com sucesso!")
-        print("📊 Estatísticas do arquivo gerado:")
-        print(f"   - Tamanho: {Path('exported_data/ground_truth.csv').stat().st_size/1024:.2f} KB")
-        print(f"   - Linhas: {sum(1 for _ in open('exported_data/ground_truth.csv'))}")
+        print("✅ Extraction completed successfully!")
+        print("📊 Generated file statistics:")
+        print(f"   - Length: {Path(args.gps_data).stat().st_size/1024:.2f} KB")
+        print(f"   - Lines: {sum(1 for _ in open(args.gps_data))}")
 
     except Exception as e:
         print(f"❌ Erro fatal: {str(e)}")

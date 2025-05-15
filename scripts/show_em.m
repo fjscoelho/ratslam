@@ -24,7 +24,7 @@ nodes = readtable('exported_data/nodes.csv');
 links = readtable('exported_data/links.csv');
 
 % Load Ground Truth
-GT_table = readtable('exported_data/ground_truth.csv');
+GT_table = readtable('exported_data/gps.csv');
 
 % extract lat and long
 n2 = height(GT_table);

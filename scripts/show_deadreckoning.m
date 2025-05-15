@@ -26,7 +26,7 @@ print('-dpng', '-r600', 'Figures/dead_reckoning.png');
 print('-depsc2', '-r600', 'Figures/dead_reckoning.eps');
 
 % Ground Truth
-GT_table = readtable('exported_data/ground_truth.csv');
+GT_table = readtable('exported_data/gps.csv');
 n2 = height(GT_table);
 lat = table2array(GT_table(1:n2,"latitude"));
 long = table2array(GT_table(1:n2,"longitude"));
