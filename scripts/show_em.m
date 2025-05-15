@@ -7,7 +7,7 @@ clc;
 % Set to true to save a experience map evolution video
 save_video = false;
 
-% Set to true to save partial fiugres of map evolution
+% Set to true to save partial figures of map evolution
 save_figures = false;
 
 if save_video
