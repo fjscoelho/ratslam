@@ -7,9 +7,9 @@ import csv
 from datetime import datetime
 import argparse
 
-# comand example: python3 extract_nodes_edges_map.py output_bags/surveyor_test1.bag/surveyor_test1.bag_0.db3 --nodes exported_data/nodes.csv --links exported_data/links.csv
+# comand example: python3 extract_nodes_edges_map.py output_bags/surveyor_test1.bag/surveyor_test1.bag_0.db3 --topic_root surveyor --output_path exported_data
 
-def extract_topological_data(bag_file, nodes_csv, links_csv):
+def extract_topological_data(bag_file, topic_name, nodes_csv, links_csv):
     """Extrai nós e conexões para CSVs separados"""
     conn = sqlite3.connect(f"file:{bag_file}?mode=ro", uri=True)
     cursor = conn.cursor()
@@ -37,9 +37,9 @@ def extract_topological_data(bag_file, nodes_csv, links_csv):
                     SELECT m.timestamp, m.data 
                     FROM messages m 
                     JOIN topics t ON m.topic_id = t.id 
-                    WHERE t.name = '/surveyor/ExperienceMap/Map'
+                    WHERE t.name = ?
                     ORDER BY m.timestamp
-                    """)
+                    """, (topic_name,))
 
                 for ts, data in cursor:
                     try:
@@ -82,12 +82,15 @@ def extract_topological_data(bag_file, nodes_csv, links_csv):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Extrai dados de mapa topológico para CSV')
     parser.add_argument('bag_file', help='Arquivo .db3 de entrada')
-    parser.add_argument('--nodes', default='nodes.csv', help='Arquivo de saída para nós')
-    parser.add_argument('--links', default='links.csv', help='Arquivo de saída para conexões')
+    parser.add_argument('--topic_root', default='surveyor', help='Topic root name to extract from bag')
+    parser.add_argument('--output_path', default='exported_data', help='output path for CSV files')
     
     args = parser.parse_args()
+    topic_name = '/'+args.topic_root+'/ExperienceMap/Map'
+    nodes_output = args.output_path+'/nodes.csv' # output file path for nodes
+    links_output = args.output_path+'/links.csv' # output file path for links
 
     # ROS 2 initialize to desserialization
     rclpy.init()
-    extract_topological_data(args.bag_file, args.nodes, args.links)
+    extract_topological_data(args.bag_file, topic_name, nodes_output, links_output)
     rclpy.shutdown()

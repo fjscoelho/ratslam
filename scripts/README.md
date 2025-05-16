@@ -18,11 +18,11 @@ ratslam/
 │       └── 📁 bag_dataset1/
 │           ├── 📄 metadata.yaml
 │           └── 📄 bag_dataset1.db3
-└── 📁 Figures/                  # Visualization outputs
-    ├── 🖼️ Final_Exp_map.png
-    ├── 🖼️ Final_Exp_map.eps
-    ├── 🎞️ experience_map_evolution.avi
-    └── 📁 map_evolution/        # Partial evolution frames
+│   └──📁 Figures/                  # Visualization outputs
+        ├── 🖼️ Final_Exp_map.png
+        ├── 🖼️ Final_Exp_map.eps
+        ├── 🎞️ experience_map_evolution.avi
+        └── 📁 map_evolution/        # Partial evolution frames
 ```                        
 
 ### Core Requirements
@@ -65,20 +65,41 @@ Extracts **experience map data** from ROS 2 bag files and exports it to CSV form
 
 #### Usage:
 ```bash
-python3 extract_gps_data.py <path_to_ros2_bag> --nodes <output_nodes_path> --links <output_links_path>
+python3 extract_nodes_edges.py <path_to_ros2_bag> --topic_root <topic_root_name> --output_path <output_path>
 ```
 
 #### Parameters:
-| Argument          | Type    | Default      | Description                                           |
-|-------------------|---------|--------------|-------------------------------------------------------|
-| `input_path`      | string  | -            | Path to ROS 2 bag folder (must contain metadata.yaml) |
-| `output_path`     | string  | `nodes.csv`  | output file for nodes data CSV                        |
-| `output_path`     | string  | `links.csv`  | output file for links data CSV                        |
+| Argument          | Type    | Default         | Description                                                  |
+|-------------------|---------|-----------------|--------------------------------------------------------------|
+| `input_file`      | string  | -               | Path to ROS 2 bag folder (in this case include /bagfile.db3) |
+| `topic_root`      | string  | `surveyor`      | topic root name                                              |
+| `output_path`     | string  | `exported_data` | output file for links data CSV                               |
 
 #### Example:
 
 ```bash
-python3 extract_nodes_edges_map.py output_bags/surveyor_test1.bag/surveyor_test1.bag_0.db3 --nodes exported_data/nodes.csv --links exported_data/links.csv
+python3 python3 extract_nodes_edges_map.py output_bags/surveyor_test1.bag/surveyor_test1.bag_0.db3 --topic_root surveyor --output_path exported_data
+```
+
+### `extract_topics.py`
+Extracts **LocalView, TopologicalAction and RobotPose data** from ROS 2 bag files and exports it to CSV format.
+
+#### Usage:
+```bash
+python3 extract_topics.py <path_to_ros2_bag> --topic_root <topic_root_name> --output_path <output_path>
+```
+
+#### Parameters:
+| Argument          | Type    | Default         | Description                                           |
+|-------------------|---------|-----------------|-------------------------------------------------------|
+| `input_path`      | string  | -               | Path to ROS 2 bag folder (must contain metadata.yaml) |
+| `topic_root`      | string  | `surveyor`      | topic root name                                       |
+| `output_path`     | string  | `exported_data` | output file for links data CSV                        |
+
+#### Example:
+
+```bash
+python3 python3 extract_topics.py output_bags/surveyor_test1.bag --topic_root surveyor --output_path exported_data
 ```
 
 

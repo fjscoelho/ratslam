@@ -2,6 +2,7 @@ from rosbags.rosbag2 import Reader
 import csv
 import struct
 from pathlib import Path
+import argparse
 
 def extract_ViewTemplate(bag_path, topic, output_file):
     # Ensure that the output directory exists 
@@ -112,38 +113,53 @@ def extract_RobotPose(bag_path, topic, output_file):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description='Extract messages from LocalView, TopologicalAction and RobotPose to CSV')
+    parser.add_argument('bag_file', help='Path to folder that contains bag in .db3 format')
+    parser.add_argument('--topic_root', default='surveyor', help='Topic root name to extract from bag')
+    parser.add_argument('--output_path', default='exported_data', help='output path for CSV files')
+
+    args = parser.parse_args()
+    view_template_topic = '/'+args.topic_root+'/LocalView/Template'
+    view_template_output = args.output_path+'/vt_id.csv'
+
+    topologival_action_topic = '/'+args.topic_root+'/PoseCell/TopologicalAction'
+    topological_action_output = args.output_path+'/em_id.csv'
+
+    robot_pose_topic = '/'+args.topic_root+'/ExperienceMap/RobotPose'
+    robot_pose_output = args.output_path+'/pose.csv'
+
     try:
         print("⏳ Iniciando extração de dados ViewTemplate...")
         extract_ViewTemplate(
-            'output_bags/surveyor_test1.bag',
-            '/surveyor/LocalView/Template',
-            'exported_data/vt_id.csv'
+            args.bag_file,
+            view_template_topic,
+            view_template_output
         )
-        print("✅ Extração concluída com sucesso!")
-        print("📊 Estatísticas do arquivo gerado:")
-        print(f"   - Tamanho: {Path('exported_data/vt_id.csv').stat().st_size/1024:.2f} KB")
-        print(f"   - Linhas: {sum(1 for _ in open('exported_data/vt_id.csv'))}")
+        print("✅ Extraction completed successfully!")
+        print("📊 Generated file statistics:")
+        print(f"   - Length: {Path(view_template_output).stat().st_size/1024:.2f} KB")
+        print(f"   - Lines: {sum(1 for _ in open(view_template_output))}")
 
-        print("⏳ Iniciando extração de dados TopologicalNode...")
+        print("⏳ Iniciando extração de dados TopologicalAction...")
         extract_TopologicalAction(
-            'output_bags/surveyor_test1.bag',
-            '/surveyor/PoseCell/TopologicalAction',
-            'exported_data/em_id.csv'
+            args.bag_file,
+            topologival_action_topic,
+            topological_action_output
         )
         print("✅ Extração concluída com sucesso!")
         print("📊 Estatísticas do arquivo gerado:")
-        print(f"   - Tamanho: {Path('exported_data/em_id.csv').stat().st_size/1024:.2f} KB")
-        print(f"   - Linhas: {sum(1 for _ in open('exported_data/em_id.csv'))}")
+        print(f"   - Tamanho: {Path(topological_action_output).stat().st_size/1024:.2f} KB")
+        print(f"   - Linhas: {sum(1 for _ in open(topological_action_output))}")
 
         print("⏳ Iniciando extração de dados RobotPose...")
         extract_RobotPose(
-            'output_bags/surveyor_test1.bag',
-            '/surveyor/ExperienceMap/RobotPose',
-            'exported_data/pose.csv'
+            args.bag_file,
+            robot_pose_topic,
+            robot_pose_output
         )
         print("✅ Extração concluída com sucesso!")
         print("📊 Estatísticas do arquivo gerado:")
-        print(f"   - Tamanho: {Path('exported_data/pose.csv').stat().st_size/1024:.2f} KB")
-        print(f"   - Linhas: {sum(1 for _ in open('exported_data/pose.csv'))}")
+        print(f"   - Tamanho: {Path(robot_pose_output).stat().st_size/1024:.2f} KB")
+        print(f"   - Linhas: {sum(1 for _ in open(robot_pose_output))}")
     except Exception as e:
         print(f"❌ Erro fatal: {str(e)}")
