@@ -19,9 +19,8 @@ def extract_topological_data(bag_file, topic_name, nodes_csv, links_csv):
         with open(nodes_csv, 'w', newline='') as nodes_file:
             node_writer = csv.writer(nodes_file)
             node_writer.writerow([
-                'id', 'x', 'y', 'z',
-                'orientation_x', 'orientation_y', 'orientation_z', 'orientation_w',
-                'timestamp'
+                'stamp_sec', 'stamp_nsec', 'id', 'x', 'y', 'z',
+                'orientation_x', 'orientation_y', 'orientation_z', 'orientation_w'
             ])
 
             # write link file
@@ -29,7 +28,7 @@ def extract_topological_data(bag_file, topic_name, nodes_csv, links_csv):
                 link_writer = csv.writer(links_file)
                 link_writer.writerow([
                     'id', 'source_id', 'destination_id',
-                    'duration_sec', 'duration_nanosec', 'timestamp'
+                    'duration_sec', 'duration_nanosec'
                 ])
 
                 # get all messages from topic
@@ -44,11 +43,14 @@ def extract_topological_data(bag_file, topic_name, nodes_csv, links_csv):
                 for ts, data in cursor:
                     try:
                         msg = deserialize_message(data, TopologicalMap)
-                        timestamp = datetime.fromtimestamp(ts/1e9).isoformat()
-
+                        # timestamp = (ts/1e9) # datetime.fromtimestamp(ts/1e9).isoformat()
+                        stamp_sec = msg.header.stamp.sec
+                        stamp_nsec = msg.header.stamp.nanosec
                         # Process nodes
                         for node in msg.node:
                             node_writer.writerow([
+                                stamp_sec,
+                                stamp_nsec,
                                 node.id,
                                 node.pose.position.x,
                                 node.pose.position.y,
@@ -57,7 +59,6 @@ def extract_topological_data(bag_file, topic_name, nodes_csv, links_csv):
                                 node.pose.orientation.y,
                                 node.pose.orientation.z,
                                 node.pose.orientation.w,
-                                timestamp
                             ])
 
                         # Process edges
@@ -68,7 +69,7 @@ def extract_topological_data(bag_file, topic_name, nodes_csv, links_csv):
                                 edge.destination_id,
                                 edge.duration.sec,
                                 edge.duration.nanosec,
-                                timestamp
+                                # timestamp
                             ])
 
                     except Exception as e:

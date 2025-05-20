@@ -5,10 +5,10 @@ close all;
 clc;
 
 % Set to true to save a experience map evolution video
-save_video = false;
+save_video = true;
 
 % Set to true to save partial figures of map evolution
-save_figures = false;
+save_figures = true;
 
 if save_video
     numFrames = 50; % Número de iterações/timesteps
@@ -25,6 +25,18 @@ links = readtable('exported_data/links.csv');
 
 % Load Ground Truth
 GT_table = readtable('exported_data/gps.csv');
+
+last_node_time_stamp = table2array((nodes(end,"stamp_sec")))
+
+% find time_stamp in GT_table
+[found, position] = ismember(last_node_time_stamp, GT_table.stamp_sec);
+if found
+    disp(position)
+    linha_encontrada = GT_table(position, :)
+end
+
+% cut gps table to last map time stamp
+GT_table = GT_table(1:position, :);
 
 % extract lat and long
 n2 = height(GT_table);
@@ -111,6 +123,42 @@ while i <= n
             end
 end
 
+%% Offset Correction
+off_setx = nodes_x(1);
+off_sety = nodes_y(1);
+
+nodes_x = nodes_x - off_setx;
+nodes_y = nodes_y - off_sety;
+
+plot(x,y,'LineWidth',1.5,'Color','b','LineStyle','-')
+xlim(x_lim); ylim(y_lim);
+sz = 75; % Scatter marke size
+hold on
+plot(nodes_x,nodes_y,'LineWidth',1.5,'Color','r')
+scatter(nodes_x(1),nodes_y(1),'red','filled','Marker','o','SizeData',sz)
+scatter(x(1),y(1),'blue','filled','Marker','o','SizeData',sz)
+scatter(x(end),y(end),'blue','diamond','filled','SizeData',sz)
+scatter(nodes_x(end),nodes_y(end),'red','diamond','filled','SizeData',sz)
+hold off
+title('Experience Map - offset correction','FontSize',12,'Interpreter','latex')
+xlabel('$x$ (m)','FontSize',12,'Interpreter','latex');
+ylabel('$y$ (m)','FontSize',12,'Interpreter','latex');
+legend('ground truth','trajectory','Interpreter','latex','Location','best')            
+grid on
+hold off
+drawnow
+
+if save_video
+    writeVideo(vidObj, getframe(gcf));
+end
+if save_figures
+    figure_name = "Figures/Exp_Map/map_evolution/PartialMap_"+num2str(fig_counter);
+    print('-dpng', '-r600', figure_name+'.png');
+    print('-depsc2', '-r600', figure_name+'.eps');
+    fig_counter = fig_counter+1;
+end
+
+
 if save_video
     close(vidObj);
     % Convert to mp4: Need ffmeg in PATH
@@ -120,6 +168,8 @@ end
 print('-dpng', '-r600', 'Figures/Exp_Map/Final_Exp_map.png');
 print('-depsc2', '-r600', 'Figures/Exp_Map/Final_Exp_map.eps');
 
+
+%% Error Computation
 % Make a resample of ground truth arrays to equalize the size with exp map
 % arrays
 new_len = length(nodes_y);
@@ -153,8 +203,24 @@ erro_dist = zeros(new_len,1);
 for i=1:new_len
     erro_dist(i) = sqrt(erro_x(i)^2 + erro_y(i)^2);
 end
-erro_med = sum(erro_dist)/new_len
+% erro_dist is always positive. It is the Euclidian distance between two
+% points of both trajectories
 
-plot(erro_dist)
+erro_med = sum(erro_dist)/new_len;
+k = 0:new_len-1;
 
+figure'
 
+plot(k,erro_dist,'LineWidth',1.5,'Color','b','LineStyle','-')
+hold on
+plot(k,erro_med*ones(new_len,1),'LineWidth',1.5,'Color','r','LineStyle','--')
+xlim([0 new_len-1])
+grid on
+hold off
+title(['Trajectory error - Average = ' num2str(erro_med) ' m'],'FontSize',12,'Interpreter','latex')
+xlabel('$k$ (samples)','FontSize',12,'Interpreter','latex');
+ylabel('Euclidian distance','FontSize',12,'Interpreter','latex');
+legend('Euclidian distance','Average error','Interpreter','latex','Location','best') 
+
+print('-dpng', '-r600', 'Figures/Exp_Map/Distance_error.png');
+print('-depsc2', '-r600', 'Figures/Exp_Map/Distance_error.eps');
