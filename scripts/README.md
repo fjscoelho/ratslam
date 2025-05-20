@@ -35,6 +35,14 @@ ratslam/
   ```bash
   sudo apt-get install ros-$ROS_DISTRO-rosbag2
 
+Before you run these script you **must store an bag with the topics**: /surveyor/ExperienceMap/Map /surveyor/ExperienceMap/RobotPose /surveyor/LocalView/Template /surveyor/PoseCell/TopologicalAction and /surveyor/gps_fix with your ground truth is provided by GPS data.
+
+**Example:**
+```bash
+ros2 bag record -o surveyor_data1_t2 /surveyor/ExperienceMap/Map /surveyor/ExperienceMap/RobotPose /surveyor/LocalView/Template /surveyor/PoseCell/TopologicalAction /surveyor/gps_fix
+```
+
+
 ## Scripts Overview
 
 ### `extract_gps_data.py`
@@ -56,7 +64,7 @@ python3 extract_gps_data.py <path_to_ros2_bag> --topic <gps_topic_name> --gps_da
 #### Example:
 
 ```bash
-python3 extract_gps_data.py ../../../bags/20250416_131706_bag_ros2 --topic /surveyor/gps_fix --gps_data exported_data/gps.csv
+python3 python3 extract_gps_data.py output_bags/surveyor_data1_t3 --topic /surveyor/gps_fix --gps_data exported_data/gps.csv
 ```
 
 ### `extract_nodes_edges.py`
@@ -78,7 +86,7 @@ python3 extract_nodes_edges.py <path_to_ros2_bag> --topic_root <topic_root_name>
 #### Example:
 
 ```bash
-python3 python3 extract_nodes_edges_map.py output_bags/surveyor_test1.bag/surveyor_test1.bag_0.db3 --topic_root surveyor --output_path exported_data
+python3 python3 extract_nodes_edges_map.py output_bags/surveyor_data1_t3/surveyor_data1_t3_0.db3 --topic_root surveyor --output_path exported_data
 ```
 
 ### `extract_topics.py`
@@ -99,7 +107,7 @@ python3 extract_topics.py <path_to_ros2_bag> --topic_root <topic_root_name> --ou
 #### Example:
 
 ```bash
-python3 python3 extract_topics.py output_bags/surveyor_test1.bag --topic_root surveyor --output_path exported_data
+python3 extract_topics.py output_bags/surveyor_data1_t3 --topic_root surveyor --output_path exported_data
 ```
 
 

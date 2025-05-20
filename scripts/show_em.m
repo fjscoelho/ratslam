@@ -59,21 +59,29 @@ y_lim = round([min_y-0.05*delta_y max_y+0.05*delta_y])
 
 fig_counter = 1;
 figure'
-for i=1:n
-    if i == 1
-        id = 0;
-    else
-        if nodes.id(i) >= nodes.id(i-1)
+
+i = 2;
+% for i=1:n
+%     if i == 1
+%         id = 0;
+while i <= n
+    % els
+        while (nodes.id(i) >= nodes.id(i-1))
             nodes_x = [nodes_x; nodes.x(i)];
             nodes_y = [nodes_y; nodes.y(i)];
-            % disp(nodes.id(i))
-        else
+            disp(nodes.id(i))
+            i = i + 1;
+            if (i > n)
+                break
+            end
+        end
             plot(x,y,'LineWidth',1.5,'Color','b','LineStyle','-')
             xlim(x_lim); ylim(y_lim);
             sz = 75; % Scatter marke size
             hold on
             plot(nodes_x,nodes_y,'LineWidth',1.5,'Color','r')
-            scatter(nodes_x(1),nodes_y(1),'blue','filled','Marker','o','SizeData',sz)
+            scatter(nodes_x(1),nodes_y(1),'red','filled','Marker','o','SizeData',sz)
+            scatter(x(1),y(1),'blue','filled','Marker','o','SizeData',sz)
             scatter(x(end),y(end),'blue','diamond','filled','SizeData',sz)
             scatter(nodes_x(end),nodes_y(end),'red','diamond','filled','SizeData',sz)
             hold off
@@ -82,10 +90,16 @@ for i=1:n
             ylabel('$y$ (m)','FontSize',12,'Interpreter','latex');
             legend('ground truth','trajectory','Interpreter','latex','Location','best')            
             grid on
-            nodes_x = [0];
-            nodes_y = [0];
             hold off
             drawnow
+      
+            i = i + 1;
+
+            if (i <= n) % Verify if doesn't exceed the array length
+                  nodes_x = [nodes.x(i)];
+                  nodes_y = [nodes.y(i)];
+            end
+            disp(i)
             if save_video
                 writeVideo(vidObj, getframe(gcf));
             end
@@ -95,8 +109,6 @@ for i=1:n
                 print('-depsc2', '-r600', figure_name+'.eps');
                 fig_counter = fig_counter+1;
             end
-        end
-    end
 end
 
 if save_video
@@ -107,3 +119,42 @@ end
 
 print('-dpng', '-r600', 'Figures/Exp_Map/Final_Exp_map.png');
 print('-depsc2', '-r600', 'Figures/Exp_Map/Final_Exp_map.eps');
+
+% Make a resample of ground truth arrays to equalize the size with exp map
+% arrays
+new_len = length(nodes_y);
+
+% Encontra os índices dos máximos e mínimos
+[~, idx_max] = max(x);
+[~, idx_min] = min(x);
+
+% Garante que os extremos sejam incluídos
+indices_extremos = unique([1, idx_min, idx_max, length(x)]);
+
+% Cria um vetor de índices distribuídos, incluindo extremos
+indices_reamostrados = round(linspace(1, length(x), new_len));
+indices_finais = unique([indices_extremos, indices_reamostrados]);
+
+% Reamostra o vetor mantendo os extremos
+x_resampled = x(indices_finais(1:new_len));  % Ajusta para o tamanho n
+
+% y vector
+[~, idx_max] = max(y);
+[~, idx_min] = min(y);
+indices_reamostrados = round(linspace(1, length(y), new_len));
+indices_finais = unique([indices_extremos, indices_reamostrados]);
+
+y_resampled = y(indices_finais(1:new_len));  % Ajusta para o tamanho n
+
+erro_x = x_resampled - nodes_x;
+erro_y = y_resampled - nodes_y;
+
+erro_dist = zeros(new_len,1);
+for i=1:new_len
+    erro_dist(i) = sqrt(erro_x(i)^2 + erro_y(i)^2);
+end
+erro_med = sum(erro_dist)/new_len
+
+plot(erro_dist)
+
+

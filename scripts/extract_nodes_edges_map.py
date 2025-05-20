@@ -72,9 +72,9 @@ def extract_topological_data(bag_file, topic_name, nodes_csv, links_csv):
                             ])
 
                     except Exception as e:
-                        print(f"Erro ao processar mensagem: {e}")
+                        print(f"Processing messsage error: {e}")
 
-        print(f"Dados salvos em:\n- Nós: {nodes_csv}\n- Conexões: {links_csv}")
+        print(f"Data saved in:\n- Nodes: {nodes_csv}\n- Links: {links_csv}")
 
     finally:
         conn.close()

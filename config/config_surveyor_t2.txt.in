@@ -6,7 +6,7 @@ image_crop_x_min=40
 image_crop_x_max=600
 image_crop_y_min=150
 image_crop_y_max=300
-vt_match_threshold = 0.0747
+vt_match_threshold = 0.0746
 template_x_size=60
 template_y_size=20
 vt_panoramic=0
@@ -14,11 +14,11 @@ vt_patch_normalise=2
 
 pc_cell_x_size = 2.0
 pc_dim_xy = 18
-exp_delta_pc_threshold = 1.0
+exp_delta_pc_threshold = 1.2
 pc_vt_inject_energy = 0.2
 vt_active_decay = 1.0
 exp_loops=50
-exp_initial_em_deg=20
+exp_initial_em_deg=180
 
 [draw]
 enable=1

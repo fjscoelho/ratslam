@@ -53,5 +53,5 @@ ylabel('Template / Experience ID Number', 'FontSize',12,'Interpreter','latex');
 % axis tight;
 legend('Template ID', 'Experience ID', 'Location', 'NorthWest','Interpreter','latex','Fontsize',12);
 
-print -r300 -djpeg100 Figures/vt_em_ids.png
-print('-depsc2', '-r600', 'Figures/vt_em_ids.eps');
+print -r300 -djpeg100 Figures/vt_ex_ids.png
+print('-depsc2', '-r600', 'Figures/vt_ex_ids.eps');
