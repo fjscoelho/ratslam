@@ -60,12 +60,12 @@ nodes_x = [0];
 nodes_y = [0];
 id = 0;
 
-min_x = min(nodes.x);
-max_x = max(nodes.x);
+min_x = min([x; nodes.x]);
+max_x = max([x; nodes.x]);
 delta_x = max_x-min_x;
 x_lim = round([min_x-0.05*delta_x max_x+0.05*delta_x])
-min_y = min(nodes.y);
-max_y = max(nodes.y);
+min_y = min([y; nodes.y]);
+max_y = max([y; nodes.y]);
 delta_y = max_y-min_y;
 y_lim = round([min_y-0.05*delta_y max_y+0.05*delta_y])
 
