@@ -14,7 +14,7 @@ if save_video
     numFrames = 50; % Número de iterações/timesteps
     videoFile = 'Figures/Exp_Map/experience_map_evolution.avi';
     vidObj = VideoWriter(videoFile);
-    vidObj.FrameRate = 5;
+    vidObj.FrameRate = 4;
     vidObj.Quality = 100; 
     open(vidObj);
 end
@@ -26,17 +26,18 @@ links = readtable('exported_data/links.csv');
 % Load Ground Truth
 GT_table = readtable('exported_data/gps.csv');
 
-last_node_time_stamp = table2array((nodes(end,"stamp_sec")))
-
-% find time_stamp in GT_table
-[found, position] = ismember(last_node_time_stamp, GT_table.stamp_sec);
-if found
-    disp(position)
-    linha_encontrada = GT_table(position, :)
-end
-
-% cut gps table to last map time stamp
-GT_table = GT_table(1:position, :);
+% % Get the last time stamp of experience map nodes
+% last_node_time_stamp = table2array((nodes(end,"stamp_sec")))
+% 
+% % find time_stamp in GT_table
+% [found, position] = ismember(last_node_time_stamp, GT_table.stamp_sec);
+% if found
+%     disp(position)
+%     linha_encontrada = GT_table(position, :)
+% end
+% 
+% % cut gps table to last map time stamp
+% GT_table = GT_table(1:position, :);
 
 % extract lat and long
 n2 = height(GT_table);
@@ -63,30 +64,28 @@ id = 0;
 min_x = min([x; nodes.x]);
 max_x = max([x; nodes.x]);
 delta_x = max_x-min_x;
-x_lim = round([min_x-0.05*delta_x max_x+0.05*delta_x])
+x_lim = round([min_x-0.05*delta_x max_x+0.05*delta_x]);
 min_y = min([y; nodes.y]);
 max_y = max([y; nodes.y]);
 delta_y = max_y-min_y;
-y_lim = round([min_y-0.05*delta_y max_y+0.05*delta_y])
+y_lim = round([min_y-0.05*delta_y max_y+0.05*delta_y]);
 
 fig_counter = 1;
 figure'
 
 i = 2;
-% for i=1:n
-%     if i == 1
-%         id = 0;
 while i <= n
-    % els
         while (nodes.id(i) >= nodes.id(i-1))
             nodes_x = [nodes_x; nodes.x(i)];
             nodes_y = [nodes_y; nodes.y(i)];
             disp(nodes.id(i))
             i = i + 1;
+            node_time_stamp = nodes.stamp_sec(i-1) % Time stemp of last map publish
             if (i > n)
                 break
             end
         end
+            [x, y] = ground_truth_cutting(node_time_stamp, GT_table);
             plot(x,y,'LineWidth',1.5,'Color','b','LineStyle','-')
             xlim(x_lim); ylim(y_lim);
             sz = 75; % Scatter marke size
@@ -224,3 +223,41 @@ legend('Euclidian distance','Average error','Interpreter','latex','Location','be
 
 print('-dpng', '-r600', 'Figures/Exp_Map/Distance_error.png');
 print('-depsc2', '-r600', 'Figures/Exp_Map/Distance_error.eps');
+
+
+function [x, y] = ground_truth_cutting(last_node_time_stamp, GT_table)
+
+% % find time_stamp in GT_table
+% [found, position] = ismember(last_node_time_stamp, GT_table.stamp_sec);
+% if found
+%     disp(position)
+%     linha_encontrada = GT_table(position, :)
+% end
+
+i = 1;
+while GT_table.stamp_sec(i) < last_node_time_stamp
+    position = i;
+    i = i + 1;
+end
+
+% cut gps table to last map time stamp
+GT_table = GT_table(1:position-1, :);
+
+% extract lat and long
+n2 = height(GT_table);
+lat = table2array(GT_table(1:n2,"latitude"));
+long = table2array(GT_table(1:n2,"longitude"));
+
+% interpolate zero datas
+for i = 1:n2
+    if long(i) == 0
+        long(i) = (long(i-1)+long(i+1))/2;
+    end
+    if lat(i) == 0
+        lat(i) = (lat(i-1)+lat(i+1))/2;
+    end
+end
+
+[x, y] = lat_lon_to_cartesian(lat, long);
+
+end

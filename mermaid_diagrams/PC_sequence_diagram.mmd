@@ -1,0 +1,12 @@
+sequenceDiagram  
+    participant Odometria  
+    participant TemplateVisual  
+    participant PoseCells  
+    participant ExperienceMap  
+
+    Odometria ->> PoseCells: on_odo(vtrans, vrot, dt)  
+    PoseCells ->> PoseCells: Path Integration  
+    TemplateVisual ->> PoseCells: on_view_template(vt_id, vt_rad)  
+    PoseCells ->> PoseCells: Correção Visual  
+    PoseCells ->> ExperienceMap: TopologicalAction  
+    Note right of PoseCells: CREATE_NODE/EDGE/SET_NODE 

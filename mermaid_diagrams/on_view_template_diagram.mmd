@@ -1,0 +1,17 @@
+graph TD
+    A[Recebe vt_id e vt_rad] --> B{Template novo?}
+    B -->|Sim| C[create_view_template]
+    B -->|Não| D[Recupera template existente]
+    
+    C --> E[Inicializa novo template]
+    D --> F{Template recente?}
+    F -->|Não| G[Calcula e injeta energia]
+    F -->|Sim| H[Ignora injeção]
+    
+    G --> I[Atualiza decaimento do template atual]
+    H --> I
+    E --> I
+    
+    I --> J[Atualização global de decaimento]
+    J --> K[Atualiza estado: prev_vt = current_vt, current_vt = vt_id]
+    K --> L[vt_update = true]

@@ -1,0 +1,6 @@
+graph LR
+    A[PoseCells Ativas] --> B{delta_pc > limiar?}
+    B -->|Sim| C[CREATE_NODE/EDGE]
+    B -->|Não| D[SET_NODE]
+    C --> E[ExperienceMap]
+    D --> E
