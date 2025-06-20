@@ -1,0 +1,3 @@
+graph LR
+A[Sensor/Bagfile] -->|sensor_msgs/msg/CompressedImage| B(LocalViewMatch Node)
+B -->|topological_msgs/msg/ViewTemplate| D[Pose Cell]
