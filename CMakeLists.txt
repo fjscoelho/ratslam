@@ -34,7 +34,7 @@ find_package(Irrlicht REQUIRED)
 find_package(OpenGL REQUIRED)
 
 find_package(OpenCV REQUIRED)
-
+message(STATUS "cv_bridge_INCLUDE_DIRS: ${cv_bridge_INCLUDE_DIRS}")
 set(ament_dependencies
   rclcpp
   topological_msgs
@@ -143,6 +143,7 @@ install(TARGETS
 install(DIRECTORY 
   launch
   config
+  media
   DESTINATION share/${PROJECT_NAME}
 )
 

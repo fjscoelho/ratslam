@@ -40,8 +40,8 @@ namespace ratslam
 class PosecellScene
 {
 public:
-  PosecellScene(ptree & settings, PosecellNetwork *in_pc) :
-      pose_cells_scene(NULL), particles(NULL), position_line(NULL), pose_cell_history(NULL), posecells(in_pc)
+  PosecellScene(ptree & settings, PosecellNetwork *in_pc, const std::string& media_path_in, const std::string& image_file_in) :
+      pose_cells_scene(NULL), particles(NULL), position_line(NULL), pose_cell_history(NULL), posecells(in_pc), media_path(media_path_in), image_file(image_file_in)
   {
   window_width = 400;
   window_height = 400;
@@ -52,7 +52,7 @@ public:
     driver = device->getVideoDriver();
     scene = device->getSceneManager();
 
-    get_setting_from_ptree(media_path, settings, "media_path", (std::string)"");
+    //get_setting_from_ptree(media_path, settings, "media_path", (std::string)"");
     pose_cells_scene = scene->createNewSceneManager(false);
 
     particles = new irr::scene::IBillboardSceneNode*[NUM_PARTICLES];
@@ -205,6 +205,7 @@ private:
   irr::scene::ISceneManager * scene;
 
   std::string media_path;
+  std::string image_file;
 
 
   unsigned int window_width, window_height;

@@ -52,11 +52,19 @@ public:
             topic_root + "/ExperienceMap/SetGoalPose", 10, std::bind(&RatSLAMExperienceMap::set_goal_pose_callback, this, std::placeholders::_1));
 
         //#ifdef HAVE_IRRLICHT
+        std::string media_path;
+        this->declare_parameter<std::string>("media_path", "");
+        this->get_parameter("media_path", media_path);
+        std::string image_file;
+        this->declare_parameter<std::string>("image_file", "");
+        this->get_parameter("image_file", image_file);
+        // this->declare_parameter<bool>("draw/enable", true);
+        // this->get_parameter("draw/enable", use_graphics);
         boost::property_tree::ptree draw_settings;
         get_setting_child(draw_settings, settings, "draw", true);
         get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
         if (use_graphics) {
-            ems = new ratslam::ExperienceMapScene(draw_settings, em_.get());
+            ems = new ratslam::ExperienceMapScene(draw_settings, em_.get(), media_path, image_file);
         }
         //#endif
     }

@@ -45,8 +45,8 @@ namespace ratslam
 class ExperienceMapScene
 {
 public:
-  ExperienceMapScene(ptree & settings, ExperienceMap *in_map) :
-      exp_map_scene(NULL), exp_map_path(NULL), exp_map_goal_path(NULL), exp_map_exps(NULL), map(in_map)
+  ExperienceMapScene(ptree & settings, ExperienceMap *in_map, const std::string& media_path_in, const std::string& image_file_in) :
+      exp_map_scene(NULL), exp_map_path(NULL), exp_map_goal_path(NULL), exp_map_exps(NULL), map(in_map), media_path(media_path_in), image_file(image_file_in)
   {
 
     int width = 800;
@@ -81,8 +81,8 @@ public:
     exp_map_goal_path->getMaterial(0).Thickness = 2.0f;
 
     // todo: use relative path here and if can't find the image then draw a simple robot shape box
-    get_setting_from_ptree(media_path, settings, "media_path", (std::string)"");
-    get_setting_from_ptree(image_file, settings, "image_file", (std::string)"");
+    // get_setting_from_ptree(media_path, settings, "media_path", (std::string)"");
+    // get_setting_from_ptree(image_file, settings, "image_file", (std::string)"");
 
     // add the irat texture
     irr::video::ITexture * irat_texture = exp_map_scene->getVideoDriver()->getTexture(

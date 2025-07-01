@@ -51,11 +51,19 @@ public:
         pc_ = std::make_unique<ratslam::PosecellNetwork>(ratslam_settings);
 
         boost::property_tree::ptree draw_settings;
+        std::string media_path;
+        this->declare_parameter<std::string>("media_path", "");
+        this->get_parameter("media_path", media_path);
+        std::string image_file;
+        this->declare_parameter<std::string>("image_file", "");
+        this->get_parameter("image_file", image_file);
+        // this->declare_parameter<bool>("draw/enable", true);
+        // this->get_parameter("draw/enable", use_graphics);
         get_setting_child(draw_settings, settings, "draw", true);
         get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
         if (use_graphics)
         {
-            pcs = new ratslam::PosecellScene(draw_settings, pc_.get());
+            pcs = new ratslam::PosecellScene(draw_settings, pc_.get(), media_path, image_file);
         }
 
     }

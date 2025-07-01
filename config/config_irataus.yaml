@@ -17,10 +17,8 @@ ratslam_view_template:
     exp_loops: 20
     exp_initial_em_deg: 140
     # draw
-    enable: 1
+    enable: true
     vt_window_width: 416
     vt_window_height: 480
     exp_map_size: 500
     posecells_size: 250
-    media_path: "/home/borgesjvt/foxy_ws/src/ratslam/src/media"
-    image_file: "irat_sm.tga"
