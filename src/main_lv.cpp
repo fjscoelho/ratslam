@@ -2,8 +2,8 @@
 #include <memory>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
-// #include <cv_bridge/cv_bridge.hpp> // if rolling
-#include <cv_bridge/cv_bridge.h> // if humble
+#include <cv_bridge/cv_bridge.hpp> // if rolling
+// #include <cv_bridge/cv_bridge.h> // if humble
 
 #include "ratslam/utils.h"
 #include <boost/property_tree/ini_parser.hpp>
@@ -43,7 +43,7 @@ public:
         lv_ = std::make_unique<ratslam::LocalViewMatch>(ratslam_settings);
 
         pub_vt_ = this->create_publisher<topological_msgs::msg::ViewTemplate>(
-            topic_root + "/LocalView/Template", 10);
+            topic_root + "/view_template", 10);
 
         sub_image_ = this->create_subscription<sensor_msgs::msg::CompressedImage>(
             topic_root + "/camera/image/compressed", 10,

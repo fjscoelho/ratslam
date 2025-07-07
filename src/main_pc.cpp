@@ -46,7 +46,7 @@ public:
             topic_root + "/odom", 10, std::bind(&RatSLAMPoseCells::odo_callback, this, std::placeholders::_1));
 
         sub_template_ = this->create_subscription<topological_msgs::msg::ViewTemplate>(
-            topic_root + "/LocalView/Template", 10, std::bind(&RatSLAMPoseCells::template_callback, this, std::placeholders::_1));
+            topic_root + "/view_template", 10, std::bind(&RatSLAMPoseCells::template_callback, this, std::placeholders::_1));
 
         pc_ = std::make_unique<ratslam::PosecellNetwork>(ratslam_settings);
 
