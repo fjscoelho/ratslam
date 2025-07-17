@@ -5,10 +5,10 @@ close all;
 clc;
 
 % Set to true to save a experience map evolution video
-save_video = true;
+save_video = false;
 
 % Set to true to save partial figures of map evolution
-save_figures = true;
+save_figures = false;
 
 if save_video
     numFrames = 50; % Número de iterações/timesteps
@@ -173,27 +173,27 @@ print('-depsc2', '-r600', 'Figures/Exp_Map/Final_Exp_map.eps');
 % arrays
 new_len = length(nodes_y);
 
-% Encontra os índices dos máximos e mínimos
+% Find max and minimum latitude values
 [~, idx_max] = max(x);
 [~, idx_min] = min(x);
 
-% Garante que os extremos sejam incluídos
+% Ensures that extremes are included
 indices_extremos = unique([1, idx_min, idx_max, length(x)]);
 
-% Cria um vetor de índices distribuídos, incluindo extremos
+% Create a new vector of distributed indexes, including extremes
 indices_reamostrados = round(linspace(1, length(x), new_len));
 indices_finais = unique([indices_extremos, indices_reamostrados]);
 
 % Reamostra o vetor mantendo os extremos
-x_resampled = x(indices_finais(1:new_len));  % Ajusta para o tamanho n
+x_resampled = x(indices_finais(1:new_len));  % Adjust the length to new_len
 
-% y vector
+% longitude vector
 [~, idx_max] = max(y);
 [~, idx_min] = min(y);
 indices_reamostrados = round(linspace(1, length(y), new_len));
 indices_finais = unique([indices_extremos, indices_reamostrados]);
 
-y_resampled = y(indices_finais(1:new_len));  % Ajusta para o tamanho n
+y_resampled = y(indices_finais(1:new_len));  % Adjust the length to new_len
 
 erro_x = x_resampled - nodes_x;
 erro_y = y_resampled - nodes_y;
@@ -224,7 +224,12 @@ legend('Euclidian distance','Average error','Interpreter','latex','Location','be
 print('-dpng', '-r600', 'Figures/Exp_Map/Distance_error.png');
 print('-depsc2', '-r600', 'Figures/Exp_Map/Distance_error.eps');
 
+% Export to .csv file
+headers = {'stamp_sec', 'Latitude', 'Longitude','x_estimated','y_estimated'};
+stamp_sec = 0:1:new_len-1;
+data = [stamp_sec' x_resampled y_resampled nodes_x nodes_y];
 
+%%
 function [x, y] = ground_truth_cutting(last_node_time_stamp, GT_table)
 
 % % find time_stamp in GT_table
