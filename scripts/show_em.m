@@ -191,6 +191,7 @@ x_resampled = x(indices_finais(1:new_len));  % Adjust the length to new_len
 [~, idx_max] = max(y);
 [~, idx_min] = min(y);
 indices_reamostrados = round(linspace(1, length(y), new_len));
+indices_extremos = unique([1, idx_min, idx_max, length(x)]);
 indices_finais = unique([indices_extremos, indices_reamostrados]);
 
 y_resampled = y(indices_finais(1:new_len));  % Adjust the length to new_len
@@ -199,12 +200,15 @@ erro_x = x_resampled - nodes_x;
 erro_y = y_resampled - nodes_y;
 
 erro_dist = zeros(new_len,1);
+erro_sqrt = zeros(new_len,1);
 for i=1:new_len
     erro_dist(i) = sqrt(erro_x(i)^2 + erro_y(i)^2);
+    % erro_sqrt(i) = erro_x(i)^2 + erro_y(i)^2;
 end
 % erro_dist is always positive. It is the Euclidian distance between two
 % points of both trajectories
 
+% RMSe = sqrt(sum(erro_sqrt)/new_len)
 erro_med = sum(erro_dist)/new_len;
 k = 0:new_len-1;
 

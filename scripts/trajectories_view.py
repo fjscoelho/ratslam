@@ -60,7 +60,7 @@ def cartesian_to_latlon(x, y, origin_lat, origin_lon):
 
 # === Data Loading and Preprocessing ===
 def load_and_process_gt(paths):
-    gt_frame = []
+    # gt_frame = []
     df = pd.read_csv(paths[0])
 
     # Remove zero coordinates
@@ -97,9 +97,7 @@ def load_and_process_gt(paths):
         )
         df['seconds'] = df['Time'].dt.total_seconds()
 
-    gt_frame.append(df)
-    if DEBUG:
-        print(gt_frame)
+    
 
     # # Normalize time across all dataframes (optional)
     # if len(data_frames) > 1:
@@ -109,6 +107,17 @@ def load_and_process_gt(paths):
     #         if DEBUG:
     #             print('Seconds in df', df['seconds'].min(), df['seconds'].max())
 
+    # Criar novo DataFrame com as coordenadas convertidas
+    seconds = np.arange(0, len(df['seconds']-1))
+    gt_frame = pd.DataFrame({
+        'seconds': seconds,
+        'longitude': df['longitude'],
+        'latitude': df['latitude']
+        
+    })
+    if DEBUG:
+        print('GT FRAME: ')
+        print(gt_frame)
     return gt_frame
 
 # === Data Loading and Preprocessing ===
@@ -121,7 +130,7 @@ def load_and_process_path(paths, origin_lat, origin_lon):
         origin_lat: Latitude do ponto de origem (graus decimais)
         origin_lon: Longitude do ponto de origem (graus decimais)
     """
-    frames = []
+    # frames = []
     df = pd.read_csv(paths[1])
     zeros = (df['id'] == 0)
     
@@ -138,7 +147,7 @@ def load_and_process_path(paths, origin_lat, origin_lon):
     latitudes = []
     longitudes = []
 
-    # To remove zero point of experience map
+    # To remove zero point offset of experience map
     offset_x = df_cut['x'][0]
     offset_y = df_cut['y'][0]
 
@@ -153,34 +162,75 @@ def load_and_process_path(paths, origin_lat, origin_lon):
         longitudes.append(lon)
     
     # Criar novo DataFrame com as coordenadas convertidas
-    frames.append(pd.DataFrame({
+    path_frame = pd.DataFrame({
         'seconds': df_cut['id'],
-        'latitude': latitudes,
-        'longitude': longitudes
-    }))
+        'longitude': longitudes,
+        'latitude': latitudes
+    })
 
-    path_frame = frames
+    # path_frame = pd.DataFrame(frames)
     if DEBUG:
+            print('PATH FRAME: ')
             print(path_frame)
     return path_frame
 
 # === Interpolation Function ===
 # Creates interpolated trajectories to synchronize different routes
-def interpolate_paths(data_frames):
-    interpolated_data = []
-    max_seconds = max(len(df['latitude']) for df in data_frames)
+def interpolate_paths(gt_frame, path_frame):
+    data_frames = []
+    data_frames.append(gt_frame)
+    data_frames.append(path_frame)
 
-    print(f'max_seconds = {max_seconds}')
-    for df in data_frames:
-        seconds = np.arange(0, max_seconds)
-        interpolated_data.append(pd.DataFrame({
-            'seconds': seconds,
-            'longitude': np.interp(seconds, df['seconds'], df['longitude']),
-            'latitude': np.interp(seconds, df['seconds'], df['latitude']),
-        }))
+    # Make a resample of ground truth arrays to equalize the size with exp map arrays
+
     if DEBUG:
-            print(interpolated_data)
+        print("Data Frames: ")
+        print(data_frames)
 
+    interpolated_data = []
+
+    min_len = min(len(df) for df in data_frames) # Exp Map Length
+    max_len = max(len(df) for df in data_frames) # GPS or GT length
+    min_idx = min(range(len(data_frames)), key=lambda i: len(data_frames[i]))
+    max_idx = max(range(len(data_frames)), key=lambda i: len(data_frames[i]))
+
+    # Find max and minimum lontitude values
+    idx_lon_max, idx_lon_min = np.argmax(data_frames[min_idx]['longitude']), np.argmin(data_frames[min_idx]['longitude'])
+    extreme_indices = np.unique([0, idx_lon_min, idx_lon_max, max_len-1])
+
+    # print("extreme_indices longitudes = ")
+    # print(extreme_indices)
+    # Create a new vector of distributed indexes, including extremes
+    resampled_indices = np.round(np.linspace(0, max_len-1, min_len)).astype(int)
+    final_indices = np.unique(np.concatenate([extreme_indices, resampled_indices]))
+
+    # Resample the vector while preserving extremes
+    longitude_old = data_frames[max_idx]['longitude']
+    longitude_resampled = longitude_old[final_indices[:min_len]] # Adjust the length to new_len
+    # print(longitude_resampled)
+
+    # latitude vector
+    idx_lat_max, idx_lat_min = np.argmax(data_frames[min_idx]['latitude']), np.argmin(data_frames[min_idx]['latitude'])
+    extreme_indices = np.unique([0, idx_lat_min, idx_lat_max, max_len-1])
+    resampled_indices = np.round(np.linspace(0, max_len-1, min_len)).astype(int)
+    final_indices = np.unique(np.concatenate([extreme_indices, resampled_indices]))
+    latitude_old = data_frames[max_idx]['latitude']
+    latitude_resampled = latitude_old[final_indices[:min_len]] # Adjust the length to new_len
+    # print(latitude_resampled)
+
+    resampled_frame = pd.DataFrame({
+        'seconds': data_frames[min_idx]['seconds'],
+        'longitude': longitude_resampled.to_numpy().copy(),
+        'latitude': latitude_resampled.to_numpy().copy()
+        
+    })
+
+    interpolated_data.append(resampled_frame) # Ground Truth
+    interpolated_data.append(data_frames[min_idx]) # Experience map
+
+    if DEBUG:
+        print("Interpolated Data Frames: ")
+        print(interpolated_data)
     return interpolated_data
 
 # === Animation Function ===
@@ -207,8 +257,9 @@ def create_animation(data_frames):
     ax.add_image(tiler, 21)
 
     # Prepare plots
-    line_plots = [ax.plot([], [], linestyle=':', label=f'Ground Truth {i+1}')[0] for i in range(len(data_frames))]
-    current_positions = [ax.scatter([], [], marker='o', label=f'Current Actual Position {i+1}') for i in range(len(data_frames))]
+    line_plots = [ax.plot([], [], linestyle=':')[0] for i in range(len(data_frames))]
+    current_positions = [ax.scatter([], [], marker='o') for i in range(len(data_frames))]
+
 
     # Frame update function
     def update(frame):
@@ -221,7 +272,7 @@ def create_animation(data_frames):
         if DEBUG:
             print('Frame ' + str(frame) + ' updated. Latitude: ' + str(df['latitude'][frame]) +  ' Latitude: ' + str(df['longitude'][frame]))
         
-        plt.legend()
+        plt.legend(['Ground truth', 'Estimated trajectory'], loc='upper right', frameon=True)
         return line_plots + current_positions
 
     # Animate
@@ -235,15 +286,16 @@ def create_animation(data_frames):
 # === Main Execution ===
 if __name__ == "__main__":
     gt_frame = load_and_process_gt(PATH_FILES)
-    origin_lat = 25.75821876525879 
-    origin_lon = -80.37361907958984
+    origin_lat = gt_frame['latitude'].iloc[0] # 25.75821876525879 
+    origin_lon = gt_frame['longitude'].iloc[0] # -80.37361907958984
     path_frame = load_and_process_path(PATH_FILES, origin_lat, origin_lon)
-    # interpolated_data = interpolate_paths(data_frames)
-    create_animation(path_frame)
+    interpolated_data = interpolate_paths(gt_frame, path_frame)
+    create_animation(interpolated_data)
 
 # Plot estático completo para comparação
-for df in path_frame:
+for df in interpolated_data:
     plt.plot(df['longitude'], df['latitude'], '--', alpha=0.5)
-    plt.title('Trajetórias Completas (Verificação)')
-    print(path_frame)
-    plt.show()
+
+plt.title('Trajetórias Completas (Verificação)')
+plt.legend(['Ground truth', 'Estimated trajectory'], loc='upper right', frameon=True)
+plt.show()
