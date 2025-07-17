@@ -16,36 +16,20 @@ plt.rc('font', serif='cm')
 plt.rc('font', size=13)
 
 def cartesian_to_latlon(x, y, origin_lat, origin_lon):
-    """
-    Converte coordenadas cartesianas locais (metros) para latitude/longitude.
-    Versão corrigida para lidar com projeções UTM corretamente.
-    
-    Args:
-        x, y: Coordenadas cartesianas em metros (relativas à origem)
-        origin_lat, origin_lon: Coordenadas do ponto de origem (graus decimais)
-    
-    Returns:
-        tuple: (latitude, longitude) em graus decimais
-    """
-    # Determina a zona UTM automaticamente
-    utm_zone_number = int((origin_lon + 180) / 6) + 1
-    utm_zone_letter = 'S' if origin_lat < 0 else 'N'
     
     # Put the UTM parameters form the correct place
     utm_crs = CRS.from_dict({
         'proj': 'utm',
         'zone': 17,
-        'south': False,  # Hemisfério norte,
+        'south': False, 
         'datum': 'WGS84'
     })
     
-    # Sistema de coordenadas WGS84 (lat/lon)
+    # System WGS84 (lat/lon)
     wgs84_crs = CRS.from_string("EPSG:4326")
-    
-    # Cria o transformador
     transformer = Transformer.from_crs(utm_crs, wgs84_crs, always_xy=True)
     
-    # Converte a origem para UTM
+    # Convert origin to UTM
     origin_transformer = Transformer.from_crs(wgs84_crs, utm_crs, always_xy=True)
     origin_x, origin_y = origin_transformer.transform(origin_lon, origin_lat)
     
@@ -60,23 +44,20 @@ def cartesian_to_latlon(x, y, origin_lat, origin_lon):
 
 # === Data Loading and Preprocessing ===
 def load_and_process_gt(paths):
-    # gt_frame = []
+
     df = pd.read_csv(paths[0])
 
-    # Remove zero coordinates
-    # df = df[(df['longitude'] != 0) & (df['latitude'] != 0)]
-
-    # Identifica índices com valores zero
+    # Identify indexes with zero values
     zero_lon = df['longitude'] == 0
     zero_lat = df['latitude'] == 0
 
-    # Cria cópias deslocadas para interpolação
+    # Create shifted copies for interpolation
     lon_prev = df['longitude'].shift(1)
     lon_next = df['longitude'].shift(-1)
     lat_prev = df['latitude'].shift(1)
     lat_next = df['latitude'].shift(-1)
 
-    # Aplica a interpolação
+    # Apply interpolation
     df.loc[zero_lon, 'longitude'] = (lon_prev + lon_next)[zero_lon] / 2
     df.loc[zero_lat, 'latitude'] = (lat_prev + lat_next)[zero_lat] / 2
 
@@ -97,17 +78,6 @@ def load_and_process_gt(paths):
         )
         df['seconds'] = df['Time'].dt.total_seconds()
 
-    
-
-    # # Normalize time across all dataframes (optional)
-    # if len(data_frames) > 1:
-    #     earliest_time = min(df['seconds'].min() for df in data_frames)
-    #     for df in data_frames:
-    #         df['seconds'] -= earliest_time
-    #         if DEBUG:
-    #             print('Seconds in df', df['seconds'].min(), df['seconds'].max())
-
-    # Criar novo DataFrame com as coordenadas convertidas
     seconds = np.arange(0, len(df['seconds']-1))
     gt_frame = pd.DataFrame({
         'seconds': seconds,
@@ -122,15 +92,7 @@ def load_and_process_gt(paths):
 
 # === Data Loading and Preprocessing ===
 def load_and_process_path(paths, origin_lat, origin_lon):
-    """
-    Processa caminhos e converte coordenadas x,y para lat/long
     
-    Args:
-        paths: Lista de caminhos para arquivos CSV
-        origin_lat: Latitude do ponto de origem (graus decimais)
-        origin_lon: Longitude do ponto de origem (graus decimais)
-    """
-    # frames = []
     df = pd.read_csv(paths[1])
     zeros = (df['id'] == 0)
     
@@ -161,7 +123,7 @@ def load_and_process_path(paths, origin_lat, origin_lon):
         latitudes.append(lat)
         longitudes.append(lon)
     
-    # Criar novo DataFrame com as coordenadas convertidas
+    # Crate new data frame with latitude and longitude
     path_frame = pd.DataFrame({
         'seconds': df_cut['id'],
         'longitude': longitudes,
@@ -198,9 +160,6 @@ def interpolate_paths(gt_frame, path_frame):
     idx_lon_max, idx_lon_min = np.argmax(data_frames[min_idx]['longitude']), np.argmin(data_frames[min_idx]['longitude'])
     extreme_indices = np.unique([0, idx_lon_min, idx_lon_max, max_len-1])
 
-    # print("extreme_indices longitudes = ")
-    # print(extreme_indices)
-    # Create a new vector of distributed indexes, including extremes
     resampled_indices = np.round(np.linspace(0, max_len-1, min_len)).astype(int)
     final_indices = np.unique(np.concatenate([extreme_indices, resampled_indices]))
 
@@ -292,10 +251,10 @@ if __name__ == "__main__":
     interpolated_data = interpolate_paths(gt_frame, path_frame)
     create_animation(interpolated_data)
 
-# Plot estático completo para comparação
-for df in interpolated_data:
-    plt.plot(df['longitude'], df['latitude'], '--', alpha=0.5)
+# Static Full plot
+# for df in interpolated_data:
+#     plt.plot(df['longitude'], df['latitude'], '--', alpha=0.5)
 
-plt.title('Trajetórias Completas (Verificação)')
-plt.legend(['Ground truth', 'Estimated trajectory'], loc='upper right', frameon=True)
-plt.show()
+# plt.title('Trajetórias Completas (Verificação)')
+# plt.legend(['Ground truth', 'Estimated trajectory'], loc='upper right', frameon=True)
+# plt.show()
