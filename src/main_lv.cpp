@@ -9,7 +9,6 @@
 #endif
 
 #include "ratslam/utils.h"
-#include <boost/property_tree/ini_parser.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/compressed_image.hpp>
@@ -32,18 +31,77 @@ public:
         RCLCPP_INFO(this->get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
         RCLCPP_INFO(this->get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
 
-        declare_parameter<std::string>("config_file", "");
-        std::string config_file;
-        get_parameter("config_file", config_file);
-
+        // Leitura dos parâmetros do ROS 2
         std::string topic_root;
-        boost::property_tree::ptree settings, general_settings, ratslam_settings;
-        read_ini(config_file, settings);
-        get_setting_child(general_settings, settings, "general", true);
-        get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string)"");
-        get_setting_child(ratslam_settings, settings, "ratslam", true);
+        this->declare_parameter<std::string>("topic_root", "");
+        this->get_parameter("topic_root", topic_root);
 
-        lv_ = std::make_unique<ratslam::LocalViewMatch>(ratslam_settings);
+        double vt_min_patch_normalisation_std;
+        int vt_patch_normalisation;
+        double vt_normalisation;
+        int vt_shift_match, vt_step_match;
+        int vt_panoramic;
+        double vt_match_threshold;
+        bool vt_threshold_condition;
+        int template_x_size, template_y_size;
+        int image_crop_x_min, image_crop_x_max;
+        int image_crop_y_min, image_crop_y_max;
+        int vt_window_width, vt_window_height;
+        bool enable;
+
+        this->declare_parameter<double>("vt_min_patch_normalisation_std", 0.0);
+        this->get_parameter("vt_min_patch_normalisation_std", vt_min_patch_normalisation_std);
+        this->declare_parameter<int>("vt_patch_normalisation", 0);
+        this->get_parameter("vt_patch_normalisation", vt_patch_normalisation);
+        this->declare_parameter<double>("vt_normalisation", 0.0);
+        this->get_parameter("vt_normalisation", vt_normalisation);
+        this->declare_parameter<int>("vt_shift_match", 25);
+        this->get_parameter("vt_shift_match", vt_shift_match);
+        this->declare_parameter<int>("vt_step_match", 5);
+        this->get_parameter("vt_step_match", vt_step_match);
+        this->declare_parameter<int>("vt_panoramic", 0);
+        this->get_parameter("vt_panoramic", vt_panoramic);
+        this->declare_parameter<double>("vt_match_threshold", 0.03);
+        this->get_parameter("vt_match_threshold", vt_match_threshold);
+        this->declare_parameter<bool>("vt_threshold_condition", true);
+        this->get_parameter("vt_threshold_condition", vt_threshold_condition);
+        this->declare_parameter<int>("image_crop_x_min", 0);
+        this->get_parameter("image_crop_x_min", image_crop_x_min);
+        this->declare_parameter<int>("image_crop_x_max", -1);
+        this->get_parameter("image_crop_x_max", image_crop_x_max);
+        this->declare_parameter<int>("image_crop_y_min", 0);
+        this->get_parameter("image_crop_y_min", image_crop_y_min);
+        this->declare_parameter<int>("image_crop_y_max", -1);
+        this->get_parameter("image_crop_y_max", image_crop_y_max);
+        this->declare_parameter<int>("template_x_size", 1);
+        this->get_parameter("template_x_size", template_x_size);
+        this->declare_parameter<int>("template_y_size", 1);
+        this->get_parameter("template_y_size", template_y_size);
+
+        this->declare_parameter<bool>("enable", true);
+        this->get_parameter("enable", enable);
+        this->declare_parameter<int>("vt_window_width", 640);
+        this->get_parameter("vt_window_width", vt_window_width);
+        this->declare_parameter<int>("vt_window_height", 480);
+        this->get_parameter("vt_window_height", vt_window_height);
+
+        // Passe os parâmetros para o construtor de LocalViewMatch conforme necessário
+        // lv_ = std::make_unique<ratslam::LocalViewMatch>(...);
+        lv_ = std::make_unique<ratslam::LocalViewMatch>(    
+            vt_min_patch_normalisation_std,
+            vt_patch_normalisation,
+            vt_normalisation,
+            vt_shift_match,
+            vt_step_match,
+            vt_panoramic,
+            vt_match_threshold,
+            vt_threshold_condition,
+            template_x_size,
+            template_y_size,
+            image_crop_x_min,
+            image_crop_x_max,
+            image_crop_y_min,
+            image_crop_y_max);
 
         pub_vt_ = this->create_publisher<topological_msgs::msg::ViewTemplate>(
             topic_root + "/view_template", 10);
@@ -52,17 +110,10 @@ public:
             topic_root + "/camera/image/compressed", 10,
             std::bind(&RatSLAMViewTemplate::image_callback, this, std::placeholders::_1));
 
-        //#ifdef HAVE_IRRLICHT
-        // this->declare_parameter<bool>("draw/enable", true);
-        // this->get_parameter("draw/enable", use_graphics);
-        boost::property_tree::ptree draw_settings;
-        get_setting_child(draw_settings, settings, "draw", true);
-        get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
-
+        use_graphics = enable;
         if (use_graphics) {
-            lvs = new ratslam::LocalViewScene(draw_settings, lv_.get());
+            lvs = new ratslam::LocalViewScene(vt_window_width, vt_window_height, lv_.get());
         }
-        //#endif
     }
 
 private:

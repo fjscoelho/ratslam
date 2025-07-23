@@ -77,7 +77,21 @@ class LocalViewMatch
 public:
   friend class LocalViewScene;
 
-  LocalViewMatch(ptree settings);
+  LocalViewMatch(
+    double vt_min_patch_normalisation_std,
+    int vt_patch_normalisation,
+    double vt_normalisation,
+    int vt_shift_match,
+    int vt_step_match,
+    int vt_panoramic,
+    double vt_match_threshold,
+    bool vt_threshold_condition,
+    int template_x_size,
+    int template_y_size,
+    int image_crop_x_min,
+    int image_crop_x_max,
+    int image_crop_y_min,
+    int image_crop_y_max);
 
   ~LocalViewMatch();
 

@@ -41,16 +41,9 @@ namespace ratslam
 class LocalViewScene
 {
 public:
-  LocalViewScene(ptree & settings, LocalViewMatch *in_vt)
+  LocalViewScene(int vt_window_width, int vt_window_height, LocalViewMatch *in_vt)
   {
-
-    get_setting_from_ptree(vt_window_width, settings, "vt_window_width", 640);
-    get_setting_from_ptree(vt_window_height, settings, "vt_window_height", 480);
-
     update_ptr(in_vt);
-
-    // the camera image is in the top half and the two template windows in the bottom half
-  //  vt_window_height = vtm->IMAGE_HEIGHT * ((double)vt_window_width/vtm->IMAGE_WIDTH) * 2;
 
     device = irr::createDevice(irr::video::EDT_OPENGL, irr::core::dimension2d<irr::u32>(vt_window_width, vt_window_height), 32, false,
                                false, false);

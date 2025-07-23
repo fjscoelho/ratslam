@@ -45,30 +45,41 @@ namespace ratslam
 
 
 
-LocalViewMatch::LocalViewMatch(ptree settings)
+LocalViewMatch::LocalViewMatch(
+    double vt_min_patch_normalisation_std,
+    int vt_patch_normalisation,
+    double vt_normalisation,
+    int vt_shift_match,
+    int vt_step_match,
+    int vt_panoramic,
+    double vt_match_threshold,
+    bool vt_threshold_condition,
+    int template_x_size,
+    int template_y_size,
+    int image_crop_x_min,
+    int image_crop_x_max,
+    int image_crop_y_min,
+    int image_crop_y_max
+)
 {
-  get_setting_from_ptree(VT_MIN_PATCH_NORMALISATION_STD, settings, "vt_min_patch_normalisation_std", (double)0);
-  get_setting_from_ptree(VT_PATCH_NORMALISATION, settings, "vt_patch_normalise", 0);
-  get_setting_from_ptree(VT_NORMALISATION, settings, "vt_normalisation", (double) 0);
-  get_setting_from_ptree(VT_SHIFT_MATCH, settings, "vt_shift_match", 25);
-  get_setting_from_ptree(VT_STEP_MATCH, settings, "vt_step_match", 5);
-  get_setting_from_ptree(VT_PANORAMIC, settings, "vt_panoramic", 0);
- 
-  get_setting_from_ptree(VT_MATCH_THRESHOLD, settings, "vt_match_threshold", 0.03);
-  get_setting_from_ptree(VT_THRESHOLD_CONDITION, settings, "vt_threshold_condition", true);
-  get_setting_from_ptree(TEMPLATE_X_SIZE, settings, "template_x_size", 1);
-  get_setting_from_ptree(TEMPLATE_Y_SIZE, settings, "template_y_size", 1);
-  get_setting_from_ptree(IMAGE_VT_X_RANGE_MIN, settings, "image_crop_x_min", 0);
-  get_setting_from_ptree(IMAGE_VT_X_RANGE_MAX, settings, "image_crop_x_max", -1);
-  get_setting_from_ptree(IMAGE_VT_Y_RANGE_MIN, settings, "image_crop_y_min", 0);
-  get_setting_from_ptree(IMAGE_VT_Y_RANGE_MAX, settings, "image_crop_y_max", -1);
+  VT_MIN_PATCH_NORMALISATION_STD = vt_min_patch_normalisation_std;
+  VT_PATCH_NORMALISATION = vt_patch_normalisation;
+  VT_NORMALISATION = vt_normalisation;
+  VT_SHIFT_MATCH = vt_shift_match;
+  VT_STEP_MATCH = vt_step_match;
+  VT_PANORAMIC = vt_panoramic;
+  VT_MATCH_THRESHOLD = vt_match_threshold;
+  VT_THRESHOLD_CONDITION = vt_threshold_condition;
+  TEMPLATE_X_SIZE = template_x_size;
+  TEMPLATE_Y_SIZE = template_y_size;
+  IMAGE_VT_X_RANGE_MIN = image_crop_x_min;
+  IMAGE_VT_X_RANGE_MAX = image_crop_x_max;
+  IMAGE_VT_Y_RANGE_MIN = image_crop_y_min;
+  IMAGE_VT_Y_RANGE_MAX = image_crop_y_max;
 
   TEMPLATE_SIZE = TEMPLATE_X_SIZE * TEMPLATE_Y_SIZE;
-
   templates.reserve(10000);
-
   current_view.resize(TEMPLATE_SIZE);
-
   current_vt = 0;
   prev_vt = 0;
 }
