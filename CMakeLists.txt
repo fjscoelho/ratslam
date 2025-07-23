@@ -130,6 +130,14 @@ target_link_libraries(ratslam_vo
   ${Boost_LIBRARIES}
 )
 
+# Detect ROS 2 distro and set a C++ define for conditional includes
+if(DEFINED ENV{ROS_DISTRO})
+  message(STATUS "ROS 2 distro: $ENV{ROS_DISTRO}")
+  if($ENV{ROS_DISTRO} STREQUAL "humble")
+    add_compile_definitions(RATSLAM_ROS2_HUMBLE)
+  endif()
+endif()
+
 # Instalação dos binários
 install(TARGETS 
   ratslam_lv

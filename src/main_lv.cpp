@@ -2,8 +2,11 @@
 #include <memory>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <cv_bridge/cv_bridge.hpp> // if rolling
-// #include <cv_bridge/cv_bridge.h> // if humble
+#ifdef RATSLAM_ROS2_HUMBLE
+#include <cv_bridge/cv_bridge.h>
+#else
+#include <cv_bridge/cv_bridge.hpp>
+#endif
 
 #include "ratslam/utils.h"
 #include <boost/property_tree/ini_parser.hpp>
