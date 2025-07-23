@@ -41,8 +41,11 @@ namespace ratslam
 class LocalViewScene
 {
 public:
-  LocalViewScene(int vt_window_width, int vt_window_height, LocalViewMatch *in_vt)
+  LocalViewScene(int vt_win_width, int vt_win_height, LocalViewMatch *in_vt)
   {
+    vt_window_width = vt_win_width;
+    vt_window_height = vt_win_height;
+
     update_ptr(in_vt);
 
     device = irr::createDevice(irr::video::EDT_OPENGL, irr::core::dimension2d<irr::u32>(vt_window_width, vt_window_height), 32, false,

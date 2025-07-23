@@ -85,8 +85,6 @@ public:
         this->declare_parameter<int>("vt_window_height", 480);
         this->get_parameter("vt_window_height", vt_window_height);
 
-        // Passe os parâmetros para o construtor de LocalViewMatch conforme necessário
-        // lv_ = std::make_unique<ratslam::LocalViewMatch>(...);
         lv_ = std::make_unique<ratslam::LocalViewMatch>(    
             vt_min_patch_normalisation_std,
             vt_patch_normalisation,

@@ -43,8 +43,6 @@ using namespace std;
 namespace ratslam
 {
 
-
-
 LocalViewMatch::LocalViewMatch(
     double vt_min_patch_normalisation_std,
     int vt_patch_normalisation,

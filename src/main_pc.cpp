@@ -103,11 +103,6 @@ private:
 
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
-
-        std::ofstream outfile("tempo_execucao_odo_callback_pc.txt", std::ios::app);
-        if (outfile.is_open()) {
-            outfile << odo->header.frame_id << ". Tempo de execução (odo_callback) em pc: " << duration.count() << " ms" << std::endl;
-        }
     }
 
     void template_callback(const topological_msgs::msg::ViewTemplate::SharedPtr vt) {
@@ -126,11 +121,6 @@ private:
 
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> duration = end - start;
-
-        std::ofstream outfile("tempo_execucao_template_callback_pc.txt", std::ios::app);
-        if (outfile.is_open()) {
-            outfile << vt->header.frame_id << ". Tempo de execução (template_callback) em pc: " << duration.count() << " ms" << std::endl;
-        }
     }
 
     std::unique_ptr<ratslam::PosecellNetwork> pc_;
