@@ -39,25 +39,33 @@ using namespace std;
 namespace ratslam
 {
 
-PosecellNetwork::PosecellNetwork(ptree settings)
+PosecellNetwork::PosecellNetwork(
+    int pc_dim_xy,
+    int pc_dim_th,
+    int pc_w_e_dim,
+    int pc_w_i_dim,
+    double pc_w_e_var,
+    double pc_w_i_var,
+    double pc_global_inhib,
+    double vt_active_decay,
+    double pc_vt_inject_energy,
+    double pc_cell_x_size,
+    double exp_delta_pc_threshold,
+    double pc_vt_restore)
 {
-  /*
-   ** pose cell constants.
-   */
-  get_setting_from_ptree(PC_DIM_XY, settings, "pc_dim_xy", 21);
-  get_setting_from_ptree(PC_DIM_TH, settings, "pc_dim_th", 36);
-  get_setting_from_ptree(PC_W_E_DIM, settings, "pc_w_e_dim", 7);
-  get_setting_from_ptree(PC_W_I_DIM, settings, "pc_w_i_dim", 5);
-  get_setting_from_ptree(PC_W_E_VAR, settings, "pc_w_e_var", 1);
-  get_setting_from_ptree(PC_W_I_VAR, settings, "pc_w_i_var", 2);
-  get_setting_from_ptree(PC_GLOBAL_INHIB, settings, "pc_global_inhib", 0.00002);
-
-  get_setting_from_ptree(VT_ACTIVE_DECAY, settings, "vt_active_decay", 1.0);
-  get_setting_from_ptree(PC_VT_INJECT_ENERGY, settings, "pc_vt_inject_energy", 0.15);
-  get_setting_from_ptree(PC_CELL_X_SIZE, settings, "pc_cell_x_size", 1.0);
-  get_setting_from_ptree(EXP_DELTA_PC_THRESHOLD, settings, "exp_delta_pc_threshold", 2.0);
-
-  get_setting_from_ptree(PC_VT_RESTORE, settings, "pc_vt_restore", 0.05);
+  // Inicializa os membros com os parâmetros recebidos
+  PC_DIM_XY = pc_dim_xy;
+  PC_DIM_TH = pc_dim_th;
+  PC_W_E_DIM = pc_w_e_dim;
+  PC_W_I_DIM = pc_w_i_dim;
+  PC_W_E_VAR = pc_w_e_var;
+  PC_W_I_VAR = pc_w_i_var;
+  PC_GLOBAL_INHIB = pc_global_inhib;
+  VT_ACTIVE_DECAY = vt_active_decay;
+  PC_VT_INJECT_ENERGY = pc_vt_inject_energy;
+  PC_CELL_X_SIZE = pc_cell_x_size;
+  EXP_DELTA_PC_THRESHOLD = exp_delta_pc_threshold;
+  PC_VT_RESTORE = pc_vt_restore;
 
   // the starting position within the posecell network
   best_x = floor((double)PC_DIM_XY / 2.0);

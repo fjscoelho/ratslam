@@ -28,17 +28,9 @@ public:
         RCLCPP_INFO(this->get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
         RCLCPP_INFO(this->get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
         
-        std::string config_file;
-        declare_parameter<std::string>("config_file", "");
-        get_parameter("config_file", config_file);
-      
-        boost::property_tree::ptree settings, ratslam_settings, general_settings;
-        read_ini(config_file, settings);
-      
         std::string topic_root;
-        get_setting_child(ratslam_settings, settings, "ratslam", true);
-        get_setting_child(general_settings, settings, "general", true);
-        get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string) "");
+        this->declare_parameter<std::string>("topic_root", "");
+        this->get_parameter("topic_root", topic_root);
 
         pub_pc_ = this->create_publisher<topological_msgs::msg::TopologicalAction>(topic_root + "/PoseCell/TopologicalAction", 10);
 
@@ -48,22 +40,55 @@ public:
         sub_template_ = this->create_subscription<topological_msgs::msg::ViewTemplate>(
             topic_root + "/view_template", 10, std::bind(&RatSLAMPoseCells::template_callback, this, std::placeholders::_1));
 
-        pc_ = std::make_unique<ratslam::PosecellNetwork>(ratslam_settings);
+        // Leitura dos parâmetros do ROS 2 para PosecellNetwork
+        int pc_dim_xy, pc_dim_th, pc_w_e_dim, pc_w_i_dim;
+        double pc_w_e_var, pc_w_i_var, pc_global_inhib;
+        double vt_active_decay, pc_vt_inject_energy, pc_cell_x_size, exp_delta_pc_threshold, pc_vt_restore;
+        bool enable;
+        this->declare_parameter<int>("pc_dim_xy", 21);
+        this->get_parameter("pc_dim_xy", pc_dim_xy);
+        this->declare_parameter<int>("pc_dim_th", 36);
+        this->get_parameter("pc_dim_th", pc_dim_th);
+        this->declare_parameter<int>("pc_w_e_dim", 7);
+        this->get_parameter("pc_w_e_dim", pc_w_e_dim);
+        this->declare_parameter<int>("pc_w_i_dim", 5);
+        this->get_parameter("pc_w_i_dim", pc_w_i_dim);
+        this->declare_parameter<double>("pc_w_e_var", 1.0);
+        this->get_parameter("pc_w_e_var", pc_w_e_var);
+        this->declare_parameter<double>("pc_w_i_var", 2.0);
+        this->get_parameter("pc_w_i_var", pc_w_i_var);
+        this->declare_parameter<double>("pc_global_inhib", 0.00002);
+        this->get_parameter("pc_global_inhib", pc_global_inhib);
+        this->declare_parameter<double>("vt_active_decay", 1.0);
+        this->get_parameter("vt_active_decay", vt_active_decay);
+        this->declare_parameter<double>("pc_vt_inject_energy", 0.15);
+        this->get_parameter("pc_vt_inject_energy", pc_vt_inject_energy);
+        this->declare_parameter<double>("pc_cell_x_size", 1.0);
+        this->get_parameter("pc_cell_x_size", pc_cell_x_size);
+        this->declare_parameter<double>("exp_delta_pc_threshold", 2.0);
+        this->get_parameter("exp_delta_pc_threshold", exp_delta_pc_threshold);
+        this->declare_parameter<double>("pc_vt_restore", 0.05);
+        this->get_parameter("pc_vt_restore", pc_vt_restore);
+        this->declare_parameter<bool>("enable", true);
+        this->get_parameter("enable", enable);
 
-        boost::property_tree::ptree draw_settings;
+        // Passe os parâmetros para o construtor de PosecellNetwork
+        pc_ = std::make_unique<ratslam::PosecellNetwork>(
+            pc_dim_xy, pc_dim_th, pc_w_e_dim, pc_w_i_dim, pc_w_e_var, pc_w_i_var, pc_global_inhib,
+            vt_active_decay, pc_vt_inject_energy, pc_cell_x_size, exp_delta_pc_threshold, pc_vt_restore
+        );
+
         std::string media_path;
         this->declare_parameter<std::string>("media_path", "");
         this->get_parameter("media_path", media_path);
         std::string image_file;
         this->declare_parameter<std::string>("image_file", "");
         this->get_parameter("image_file", image_file);
-        // this->declare_parameter<bool>("draw/enable", true);
-        // this->get_parameter("draw/enable", use_graphics);
-        get_setting_child(draw_settings, settings, "draw", true);
-        get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
+
+        use_graphics = enable;
         if (use_graphics)
         {
-            pcs = new ratslam::PosecellScene(draw_settings, pc_.get(), media_path, image_file);
+            pcs = new ratslam::PosecellScene(pc_.get(), media_path, image_file);
         }
 
     }

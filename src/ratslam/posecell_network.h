@@ -41,9 +41,6 @@
 
 #include <stdio.h>
 
-#include <boost/property_tree/ini_parser.hpp>
-using boost::property_tree::ptree;
-
 typedef double Posecell;
 
 #include <boost/serialization/access.hpp>
@@ -87,7 +84,19 @@ public:
 
   enum PosecellAction {NO_ACTION = 0, CREATE_NODE, CREATE_EDGE, SET_NODE};
 
-  PosecellNetwork(ptree settings);
+  PosecellNetwork(
+    int pc_dim_xy,
+    int pc_dim_th,
+    int pc_w_e_dim,
+    int pc_w_i_dim,
+    double pc_w_e_var,
+    double pc_w_i_var,
+    double pc_global_inhib,
+    double vt_active_decay,
+    double pc_vt_inject_energy,
+    double pc_cell_x_size,
+    double exp_delta_pc_threshold,
+    double pc_vt_restore);
   ~PosecellNetwork();
 
   void on_odo(double vtrans, double vrot, double time_diff_s);

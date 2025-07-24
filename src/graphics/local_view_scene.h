@@ -41,10 +41,10 @@ namespace ratslam
 class LocalViewScene
 {
 public:
-  LocalViewScene(int vt_win_width, int vt_win_height, LocalViewMatch *in_vt)
+  LocalViewScene(int vt_windows_width_in, int vt_windows_height_in, LocalViewMatch *in_vt)
   {
-    vt_window_width = vt_win_width;
-    vt_window_height = vt_win_height;
+    vt_window_width = vt_windows_width_in;
+    vt_window_height = vt_windows_height_in;
 
     update_ptr(in_vt);
 
