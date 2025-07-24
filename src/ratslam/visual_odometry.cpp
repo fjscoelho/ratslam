@@ -35,23 +35,36 @@
 namespace ratslam
 {
 
-VisualOdometry::VisualOdometry(ptree settings)
+VisualOdometry::VisualOdometry(int vtrans_image_x_min, int vtrans_image_x_max, int vtrans_image_y_min, int vtrans_image_y_max,
+                               int vrot_image_x_min, int vrot_image_x_max, int vrot_image_y_min, int vrot_image_y_max,
+                               double camera_fov_deg, double camera_hz, double vtrans_scaling, double vtrans_max)
 {
-  get_setting_from_ptree(VTRANS_IMAGE_X_MIN, settings, "vtrans_image_x_min", 0);
-  get_setting_from_ptree(VTRANS_IMAGE_X_MAX, settings, "vtrans_image_x_max", IMAGE_WIDTH);
-  get_setting_from_ptree(VTRANS_IMAGE_Y_MIN, settings, "vtrans_image_y_min", 0);
-  get_setting_from_ptree(VTRANS_IMAGE_Y_MAX, settings, "vtrans_image_y_max", IMAGE_HEIGHT);
+  VTRANS_IMAGE_X_MIN = vtrans_image_x_min;
+  if (vtrans_image_x_max < 0)
+    VTRANS_IMAGE_X_MAX = IMAGE_WIDTH;
+  else
+    VTRANS_IMAGE_X_MAX = vtrans_image_x_max;
+  VTRANS_IMAGE_Y_MIN = vtrans_image_y_min;
+  if (vtrans_image_y_max < 0)
+    VTRANS_IMAGE_Y_MAX = IMAGE_HEIGHT;
+  else
+    VTRANS_IMAGE_Y_MAX = vtrans_image_x_max;
+  VTRANS_IMAGE_Y_MAX = vtrans_image_y_max;
+  VROT_IMAGE_X_MIN = vrot_image_x_min;
+  if (vrot_image_x_max < 0)
+    VROT_IMAGE_X_MAX = IMAGE_WIDTH;
+  else
+    VROT_IMAGE_X_MAX = vrot_image_x_max;
+  VROT_IMAGE_Y_MIN = vrot_image_y_min;
+  if (vrot_image_y_max < 0)
+    VROT_IMAGE_Y_MAX = IMAGE_HEIGHT;
+  else
+    VROT_IMAGE_Y_MAX = vrot_image_y_max;
+  CAMERA_FOV_DEG = camera_fov_deg;
+  CAMERA_HZ = camera_hz;
+  VTRANS_SCALING = vtrans_scaling;
+  VTRANS_MAX = vtrans_max;
 
-  get_setting_from_ptree(VROT_IMAGE_X_MIN, settings, "vrot_image_x_min", 0);
-  get_setting_from_ptree(VROT_IMAGE_X_MAX, settings, "vrot_image_x_max", IMAGE_WIDTH);
-  get_setting_from_ptree(VROT_IMAGE_Y_MIN, settings, "vrot_image_y_min", 0);
-  get_setting_from_ptree(VROT_IMAGE_Y_MAX, settings, "vrot_image_y_max", IMAGE_HEIGHT);
-
-  get_setting_from_ptree(CAMERA_FOV_DEG, settings, "camera_fov_deg", 50.0);
-  get_setting_from_ptree(CAMERA_HZ, settings, "camera_hz", 10.0);
-
-  get_setting_from_ptree(VTRANS_SCALING, settings, "vtrans_scaling", 100.0);
-  get_setting_from_ptree(VTRANS_MAX, settings, "vtrans_max", 20.0);
 
   vtrans_profile.resize(VTRANS_IMAGE_X_MAX - VTRANS_IMAGE_X_MIN);
   vtrans_prev_profile.resize(VTRANS_IMAGE_X_MAX - VTRANS_IMAGE_X_MIN);

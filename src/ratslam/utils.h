@@ -29,9 +29,6 @@
 #ifndef _RATSLAM_UTILS_H
 #define _RATSLAM_UTILS_H
 
-#include <boost/property_tree/ptree.hpp>
-using boost::property_tree::ptree;
-
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -40,36 +37,6 @@ using boost::property_tree::ptree;
 
 
 namespace ratslam {
-
-template<typename T>
-inline void get_setting_from_ptree(T & var, boost::property_tree::ptree & settings, std::string name, T default_value)
-{
-	try
-	{
-		var = settings.get<T>(name);
-	}
-	catch(boost::property_tree::ptree_bad_path pbp)
-	{
-		var = default_value;
-		std::cout << "SETTINGS(warning): " << name << " not found so default (" << default_value << ") used." << std::endl;
-	}
-}
-
-inline bool get_setting_child(boost::property_tree::ptree & child, boost::property_tree::ptree & settings, std::string name, bool pause_on_error = true)
-{
-	try
-	{
-		child = settings.get_child(name);
-	}
-	catch(boost::property_tree::ptree_bad_path pbp)
-	{
-		std::cout << "SETTINGS(error): " << name << " child not found." << std::endl;
-//		if (pause_on_error)
-//			std::cin.get();
-		return false;
-	}
-	return true;
-}
 
 // % Clip the input angle to between 0 and 2pi radians
 inline double clip_rad_360(double angle)

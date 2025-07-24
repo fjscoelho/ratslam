@@ -31,19 +31,9 @@ public:
     RCLCPP_INFO(get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
     RCLCPP_INFO(get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
   
-    std::string config_file;
-    declare_parameter<std::string>("config_file", "");
-    get_parameter("config_file", config_file);
-  
-    boost::property_tree::ptree settings, general_settings, vo_settings;
-    read_ini(config_file, settings);
-
     std::string topic_root;
-    ratslam::get_setting_child(vo_settings, settings, "visual_odometry", true);
-    ratslam::get_setting_child(general_settings, settings, "general", true);
-    ratslam::get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string) "");
-  
-    vo_ = new ratslam::VisualOdometry(vo_settings);
+    this->declare_parameter<std::string>("topic_root", "");
+    this->get_parameter("topic_root", topic_root);
   
     compressed_image_sub_ = this->create_subscription<sensor_msgs::msg::CompressedImage>(
       topic_root + "/camera/image/compressed", 10, std::bind(&RatSLAMVisualOdometry::image_callback, this, std::placeholders::_1));
@@ -51,7 +41,40 @@ public:
     visual_odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>(
       topic_root + "/odom", 1);
 
-      counter_ = 0;
+    counter_ = 0;
+
+    int vtrans_image_x_min, vtrans_image_x_max, vtrans_image_y_min, vtrans_image_y_max;
+    int vrot_image_x_min, vrot_image_x_max, vrot_image_y_min, vrot_image_y_max;
+    double camera_fov_deg, camera_hz, vtrans_scaling, vtrans_max;
+
+    this->declare_parameter<int>("vtrans_image_x_min", 0);
+    this->get_parameter("vtrans_image_x_min", vtrans_image_x_min);
+    this->declare_parameter<int>("vtrans_image_x_max", -1);
+    this->get_parameter("vtrans_image_x_max", vtrans_image_x_max);
+    this->declare_parameter<int>("vtrans_image_y_min", 0);
+    this->get_parameter("vtrans_image_y_min", vtrans_image_y_min);
+    this->declare_parameter<int>("vtrans_image_y_max", -1);
+    this->get_parameter("vtrans_image_y_max", vtrans_image_y_max);
+    this->declare_parameter<int>("vrot_image_x_min", 0);
+    this->get_parameter("vrot_image_x_min", vrot_image_x_min);
+    this->declare_parameter<int>("vrot_image_x_max", -1);
+    this->get_parameter("vrot_image_x_max", vrot_image_x_max);
+    this->declare_parameter<int>("vrot_image_y_min", 0);
+    this->get_parameter("vrot_image_y_min", vrot_image_y_min);
+    this->declare_parameter<int>("vrot_image_y_max", -1);
+    this->get_parameter("vrot_image_y_max", vrot_image_y_max);
+    this->declare_parameter<double>("camera_fov_deg", 50.0);
+    this->get_parameter("camera_fov_deg", camera_fov_deg);
+    this->declare_parameter<double>("camera_hz", 10.0);
+    this->get_parameter("camera_hz", camera_hz);
+    this->declare_parameter<double>("vtrans_scaling", 100.0);
+    this->get_parameter("vtrans_scaling", vtrans_scaling);
+    this->declare_parameter<double>("vtrans_max", 20.0);
+    this->get_parameter("vtrans_max", vtrans_max);
+
+    vo_ = new ratslam::VisualOdometry(vtrans_image_x_min, vtrans_image_x_max, vtrans_image_y_min, vtrans_image_y_max,
+                                       vrot_image_x_min, vrot_image_x_max, vrot_image_y_min, vrot_image_y_max,
+                                       camera_fov_deg, camera_hz, vtrans_scaling, vtrans_max);
   }
 
 private:

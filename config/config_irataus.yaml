@@ -13,7 +13,6 @@ ratslam_view_template:
 
 ratslam_pose_cells:
   ros__parameters:
-    topic_root: "irat_red"
     pc_dim_xy: 11
     pc_vt_inject_energy: 0.1
     pc_cell_x_size: 0.015
@@ -23,9 +22,7 @@ ratslam_pose_cells:
 
 ratslam_experience_map:
   ros__parameters:
-    topic_root: "irat_red"
     exp_loops: 20
     exp_initial_em_deg: 140.0
     # draw
     enable: true
-    exp_map_size: 500

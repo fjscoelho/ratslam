@@ -43,7 +43,9 @@ class VisualOdometry
 {
 public:
 
-  VisualOdometry(ptree settings);
+  VisualOdometry(int vtrans_image_x_min, int vtrans_image_x_max, int vtrans_image_y_min, int vtrans_image_y_max,
+                               int vrot_image_x_min, int vrot_image_x_max, int vrot_image_y_min, int vrot_image_y_max,
+                               double camera_fov_deg, double camera_hz, double vtrans_scaling, double vtrans_max);
 
   void on_image(const unsigned char * data, bool greyscale, unsigned int image_width, unsigned int image_height, double *vtrans_ms, double *vrot_rads);
 
