@@ -26,18 +26,9 @@ public:
         RCLCPP_INFO(this->get_logger(), "RatSLAM algorithm by Michael Milford and Gordon Wyeth");
         RCLCPP_INFO(this->get_logger(), "Distributed under the GNU GPL v3, see the included license file.");
 
-        this->declare_parameter<std::string>("config_file", "");
-        std::string config_file;
-        this->get_parameter("config_file", config_file);
-
         std::string topic_root;
-        boost::property_tree::ptree settings, general_settings, ratslam_settings;
-        read_ini(config_file, settings);
-        get_setting_child(general_settings, settings, "general", true);
-        get_setting_from_ptree(topic_root, general_settings, "topic_root", (std::string)"");
-        get_setting_child(ratslam_settings, settings, "ratslam", true);
-
-        em_ = std::make_unique<ratslam::ExperienceMap>(ratslam_settings);
+        this->declare_parameter<std::string>("topic_root", "");
+        this->get_parameter("topic_root", topic_root);
 
         pub_em_ = this->create_publisher<topological_msgs::msg::TopologicalMap>(topic_root + "/ExperienceMap/Map", 10);
         pub_em_markers_ = this->create_publisher<visualization_msgs::msg::Marker>(topic_root + "/ExperienceMap/MapMarker", 10);
@@ -51,22 +42,37 @@ public:
         sub_goal_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
             topic_root + "/ExperienceMap/SetGoalPose", 10, std::bind(&RatSLAMExperienceMap::set_goal_pose_callback, this, std::placeholders::_1));
 
-        //#ifdef HAVE_IRRLICHT
+        double exp_correction;
+        int exp_loops;
+        double exp_initial_em_deg;
+        bool enable;
+
+        this->declare_parameter<double>("exp_correction", 0.5);
+        this->get_parameter("exp_correction", exp_correction);
+        this->declare_parameter<int>("exp_loops", 10);
+        this->get_parameter("exp_loops", exp_loops);
+        this->declare_parameter<double>("exp_initial_em_deg", 90.0);
+        this->get_parameter("exp_initial_em_deg", exp_initial_em_deg);
+        this->declare_parameter<bool>("enable", true);
+        this->get_parameter("enable", enable);
+
+        em_ = std::make_unique<ratslam::ExperienceMap>(
+            exp_correction,
+            exp_loops,
+            exp_initial_em_deg
+        );
+
         std::string media_path;
         this->declare_parameter<std::string>("media_path", "");
         this->get_parameter("media_path", media_path);
         std::string image_file;
         this->declare_parameter<std::string>("image_file", "");
         this->get_parameter("image_file", image_file);
-        // this->declare_parameter<bool>("draw/enable", true);
-        // this->get_parameter("draw/enable", use_graphics);
-        boost::property_tree::ptree draw_settings;
-        get_setting_child(draw_settings, settings, "draw", true);
-        get_setting_from_ptree(use_graphics, draw_settings, "enable", true);
+
+        use_graphics = enable;
         if (use_graphics) {
-            ems = new ratslam::ExperienceMapScene(draw_settings, em_.get(), media_path, image_file);
+            ems = new ratslam::ExperienceMapScene(em_.get(), media_path, image_file);
         }
-        //#endif
     }
 
 private:

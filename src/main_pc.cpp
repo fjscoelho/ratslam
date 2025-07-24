@@ -45,6 +45,7 @@ public:
         double pc_w_e_var, pc_w_i_var, pc_global_inhib;
         double vt_active_decay, pc_vt_inject_energy, pc_cell_x_size, exp_delta_pc_threshold, pc_vt_restore;
         bool enable;
+        
         this->declare_parameter<int>("pc_dim_xy", 21);
         this->get_parameter("pc_dim_xy", pc_dim_xy);
         this->declare_parameter<int>("pc_dim_th", 36);
@@ -90,7 +91,6 @@ public:
         {
             pcs = new ratslam::PosecellScene(pc_.get(), media_path, image_file);
         }
-
     }
 
 private:

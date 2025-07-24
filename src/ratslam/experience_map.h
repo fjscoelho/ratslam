@@ -43,9 +43,6 @@
 
 #include <iostream>
 
-#include <boost/property_tree/ini_parser.hpp>
-using boost::property_tree::ptree;
-
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/vector.hpp>
@@ -121,7 +118,11 @@ class ExperienceMap
 public:
   friend class ExperienceMapScene;
 
-  ExperienceMap(ptree settings);
+  ExperienceMap(
+    double exp_correction,
+    int exp_loops,
+    double exp_initial_em_deg
+  );
   ~ExperienceMap();
 
   // create a new experience for a given position

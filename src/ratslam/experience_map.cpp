@@ -37,11 +37,15 @@ using namespace std;
 namespace ratslam
 {
 
-ExperienceMap::ExperienceMap(ptree settings)
+ExperienceMap::ExperienceMap(
+  double exp_correction,
+  int exp_loops,
+  double exp_initial_em_deg
+)
 {
-  get_setting_from_ptree(EXP_CORRECTION, settings, "exp_correction", 0.5);
-  get_setting_from_ptree(EXP_LOOPS, settings, "exp_loops", 10);
-  get_setting_from_ptree(EXP_INITIAL_EM_DEG, settings, "exp_initial_em_deg", 90.0);
+  EXP_CORRECTION = exp_correction;
+  EXP_LOOPS = exp_loops;
+  EXP_INITIAL_EM_DEG = exp_initial_em_deg;
 
   MAX_GOALS = 10;
 

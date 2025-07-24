@@ -37,12 +37,11 @@
         name="ratslam_experience_map"
         output="screen"
         args="--ros-args --remap _image_transport:=compressed">
-        <param name="config_file" value="$(find-pkg-share ratslam)/config/config_irataus.txt.in" />
         <param name="use_sim_time" value="true" />
         <param name="topic_root" value="irat_red" />
         <param name="media_path" value="$(find-pkg-share ratslam)/media" />
         <param name="image_file" value="irat_sm.tga" />
-        <!-- <param from="$(find-pkg-share ratslam)/config/config_irataus.yaml" /> -->
+        <param from="$(find-pkg-share ratslam)/config/config_irataus.yaml" />
     </node>      
 </launch>
 

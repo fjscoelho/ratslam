@@ -17,6 +17,7 @@ ratslam_pose_cells:
     pc_dim_xy: 11
     pc_vt_inject_energy: 0.1
     pc_cell_x_size: 0.015
+    exp_delta_pc_threshold: 2.0
     # draw
     enable: true
 
@@ -24,10 +25,7 @@ ratslam_experience_map:
   ros__parameters:
     topic_root: "irat_red"
     exp_loops: 20
-    exp_initial_em_deg: 140
+    exp_initial_em_deg: 140.0
     # draw
     enable: true
-    vt_window_width: 416
-    vt_window_height: 480
     exp_map_size: 500
-    posecells_size: 250
