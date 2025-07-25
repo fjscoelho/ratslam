@@ -25,14 +25,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "posecell_network.h"
-#include "utils.h"
 
+// This file implements the PosecellNetwork class for RatSLAM.
+// All code is written to be compatible with ROS 2 and follows ROS 2 C++ style guidelines.
+// For code style, see ament_uncrustify, ament_cpplint, and ament_clang_format.
+
+#include "posecell_network.h"
+
+#include <assert.h>
+#include <float.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
-#include <float.h>
+#include "utils.h"
 
 using namespace std;
 
@@ -40,18 +45,9 @@ namespace ratslam
 {
 
 PosecellNetwork::PosecellNetwork(
-    int pc_dim_xy,
-    int pc_dim_th,
-    int pc_w_e_dim,
-    int pc_w_i_dim,
-    double pc_w_e_var,
-    double pc_w_i_var,
-    double pc_global_inhib,
-    double vt_active_decay,
-    double pc_vt_inject_energy,
-    double pc_cell_x_size,
-    double exp_delta_pc_threshold,
-    double pc_vt_restore)
+  int pc_dim_xy, int pc_dim_th, int pc_w_e_dim, int pc_w_i_dim, double pc_w_e_var,
+  double pc_w_i_var, double pc_global_inhib, double vt_active_decay, double pc_vt_inject_energy,
+  double pc_cell_x_size, double exp_delta_pc_threshold, double pc_vt_restore)
 {
   // Inicializa os membros com os parâmetros recebidos
   PC_DIM_XY = pc_dim_xy;
@@ -79,7 +75,6 @@ PosecellNetwork::PosecellNetwork(
 
   odo_update = false;
   vt_update = false;
-
 }
 
 void PosecellNetwork::pose_cell_builder()
@@ -101,17 +96,15 @@ void PosecellNetwork::pose_cell_builder()
   memset(pca_new_memory, 0, (size_t)posecells_memory_size);
 
   // allocate first level pointers
-  posecells = (Posecell ***)malloc(sizeof(Posecell**) * PC_DIM_TH);
-  pca_new = (Posecell ***)malloc(sizeof(Posecell**) * PC_DIM_TH);
+  posecells = (Posecell ***)malloc(sizeof(Posecell * *) * PC_DIM_TH);
+  pca_new = (Posecell ***)malloc(sizeof(Posecell * *) * PC_DIM_TH);
 
-  for (i = 0; i < PC_DIM_TH; i++)
-  {
+  for (i = 0; i < PC_DIM_TH; i++) {
     // allocate second level pointers
-    posecells[i] = (Posecell **)malloc(sizeof(Posecell*) * PC_DIM_XY);
-    pca_new[i] = (Posecell **)malloc(sizeof(Posecell*) * PC_DIM_XY);
+    posecells[i] = (Posecell **)malloc(sizeof(Posecell *) * PC_DIM_XY);
+    pca_new[i] = (Posecell **)malloc(sizeof(Posecell *) * PC_DIM_XY);
 
-    for (j = 0; j < PC_DIM_XY; j++)
-    {
+    for (j = 0; j < PC_DIM_XY; j++) {
       // TRICKY! point second level pointers at already allocated memory
       posecells[i][j] = &posecells_memory[(i * PC_DIM_XY + j) * PC_DIM_XY];
       pca_new[i][j] = &pca_new_memory[(i * PC_DIM_XY + j) * PC_DIM_XY];
@@ -119,12 +112,12 @@ void PosecellNetwork::pose_cell_builder()
   }
 
   // for path integration
-  pca_new_rot_ptr = (Posecell **)malloc(sizeof(Posecell*) * (PC_DIM_XY + 2));
-  pca_new_rot_ptr2 = (Posecell **)malloc(sizeof(Posecell*) * (PC_DIM_XY + 2));
-  for (i = 0; i < PC_DIM_XY + 2; i++)
-  {
+  pca_new_rot_ptr = (Posecell **)malloc(sizeof(Posecell *) * (PC_DIM_XY + 2));
+  pca_new_rot_ptr2 = (Posecell **)malloc(sizeof(Posecell *) * (PC_DIM_XY + 2));
+  for (i = 0; i < PC_DIM_XY + 2; i++) {
     pca_new_rot_ptr[i] = &pca_new_memory[(i * (PC_DIM_XY + 2))];
-    pca_new_rot_ptr2[i] = &pca_new_memory[(PC_DIM_XY + 2) * (PC_DIM_XY + 2) + (i * (PC_DIM_XY + 2))];
+    pca_new_rot_ptr2[i] =
+      &pca_new_memory[(PC_DIM_XY + 2) * (PC_DIM_XY + 2) + (i * (PC_DIM_XY + 2))];
   }
 
   posecells_plane_th = (Posecell *)malloc(sizeof(Posecell) * (PC_DIM_XY + 2) * (PC_DIM_XY + 2));
@@ -143,17 +136,23 @@ void PosecellNetwork::pose_cell_builder()
   PC_I_XY_WRAP = (int *)malloc((PC_DIM_XY + PC_W_I_DIM - 1) * sizeof(int));
   PC_I_TH_WRAP = (int *)malloc((PC_DIM_TH + PC_W_I_DIM - 1) * sizeof(int));
 
-  generate_wrap(PC_E_XY_WRAP, PC_DIM_XY - PC_W_E_DIM_HALF, PC_DIM_XY, 0, PC_DIM_XY, 0, PC_W_E_DIM_HALF);
-  generate_wrap(PC_E_TH_WRAP, PC_DIM_TH - PC_W_E_DIM_HALF, PC_DIM_TH, 0, PC_DIM_TH, 0, PC_W_E_DIM_HALF);
-  generate_wrap(PC_I_XY_WRAP, PC_DIM_XY - PC_W_I_DIM_HALF, PC_DIM_XY, 0, PC_DIM_XY, 0, PC_W_I_DIM_HALF);
-  generate_wrap(PC_I_TH_WRAP, PC_DIM_TH - PC_W_I_DIM_HALF, PC_DIM_TH, 0, PC_DIM_TH, 0, PC_W_I_DIM_HALF);
+  generate_wrap(
+    PC_E_XY_WRAP, PC_DIM_XY - PC_W_E_DIM_HALF, PC_DIM_XY, 0, PC_DIM_XY, 0, PC_W_E_DIM_HALF);
+  generate_wrap(
+    PC_E_TH_WRAP, PC_DIM_TH - PC_W_E_DIM_HALF, PC_DIM_TH, 0, PC_DIM_TH, 0, PC_W_E_DIM_HALF);
+  generate_wrap(
+    PC_I_XY_WRAP, PC_DIM_XY - PC_W_I_DIM_HALF, PC_DIM_XY, 0, PC_DIM_XY, 0, PC_W_I_DIM_HALF);
+  generate_wrap(
+    PC_I_TH_WRAP, PC_DIM_TH - PC_W_I_DIM_HALF, PC_DIM_TH, 0, PC_DIM_TH, 0, PC_W_I_DIM_HALF);
 
   PC_CELLS_TO_AVG = 3;
   PC_AVG_XY_WRAP = (int *)malloc((PC_DIM_XY + 2 * PC_CELLS_TO_AVG) * sizeof(int));
   PC_AVG_TH_WRAP = (int *)malloc((PC_DIM_TH + 2 * PC_CELLS_TO_AVG) * sizeof(int));
 
-  generate_wrap(PC_AVG_XY_WRAP, PC_DIM_XY - PC_CELLS_TO_AVG, PC_DIM_XY, 0, PC_DIM_XY, 0, PC_CELLS_TO_AVG);
-  generate_wrap(PC_AVG_TH_WRAP, PC_DIM_TH - PC_CELLS_TO_AVG, PC_DIM_TH, 0, PC_DIM_TH, 0, PC_CELLS_TO_AVG);
+  generate_wrap(
+    PC_AVG_XY_WRAP, PC_DIM_XY - PC_CELLS_TO_AVG, PC_DIM_XY, 0, PC_DIM_XY, 0, PC_CELLS_TO_AVG);
+  generate_wrap(
+    PC_AVG_TH_WRAP, PC_DIM_TH - PC_CELLS_TO_AVG, PC_DIM_TH, 0, PC_DIM_TH, 0, PC_CELLS_TO_AVG);
 
   // sine and cosine lookups
   PC_XY_SUM_SIN_LOOKUP = (double *)malloc(PC_DIM_XY * sizeof(double));
@@ -161,14 +160,12 @@ void PosecellNetwork::pose_cell_builder()
   PC_TH_SUM_SIN_LOOKUP = (double *)malloc(PC_DIM_TH * sizeof(double));
   PC_TH_SUM_COS_LOOKUP = (double *)malloc(PC_DIM_TH * sizeof(double));
 
-  for (i = 0; i < PC_DIM_XY; i++)
-  {
+  for (i = 0; i < PC_DIM_XY; i++) {
     PC_XY_SUM_SIN_LOOKUP[i] = sin((double)(i + 1) * 2.0 * M_PI / (double)PC_DIM_XY);
     PC_XY_SUM_COS_LOOKUP[i] = cos((double)(i + 1) * 2.0 * M_PI / (double)PC_DIM_XY);
   }
 
-  for (i = 0; i < PC_DIM_TH; i++)
-  {
+  for (i = 0; i < PC_DIM_TH; i++) {
     PC_TH_SUM_SIN_LOOKUP[i] = sin((double)(i + 1) * 2.0 * M_PI / (double)PC_DIM_TH);
     PC_TH_SUM_COS_LOOKUP[i] = cos((double)(i + 1) * 2.0 * M_PI / (double)PC_DIM_TH);
   }
@@ -177,12 +174,9 @@ void PosecellNetwork::pose_cell_builder()
   int k, next = 0;
   int dim_centre = PC_W_E_DIM / 2;
 
-  for (k = 0; k < PC_W_E_DIM; k++)
-  {
-    for (j = 0; j < PC_W_E_DIM; j++)
-    {
-      for (i = 0; i < PC_W_E_DIM; i++)
-      {
+  for (k = 0; k < PC_W_E_DIM; k++) {
+    for (j = 0; j < PC_W_E_DIM; j++) {
+      for (i = 0; i < PC_W_E_DIM; i++) {
         PC_W_EXCITE[next] = norm2d(PC_W_E_VAR, i, j, k, dim_centre);
         total += PC_W_EXCITE[next];
         next++;
@@ -190,20 +184,16 @@ void PosecellNetwork::pose_cell_builder()
     }
   }
 
-  for (next = 0; next < PC_W_E_DIM * PC_W_E_DIM * PC_W_E_DIM; next++)
-  {
+  for (next = 0; next < PC_W_E_DIM * PC_W_E_DIM * PC_W_E_DIM; next++) {
     PC_W_EXCITE[next] /= total;
   }
 
   total = 0;
   dim_centre = PC_W_I_DIM / 2;
   next = 0;
-  for (k = 0; k < PC_W_I_DIM; k++)
-  {
-    for (j = 0; j < PC_W_I_DIM; j++)
-    {
-      for (i = 0; i < PC_W_I_DIM; i++)
-      {
+  for (k = 0; k < PC_W_I_DIM; k++) {
+    for (j = 0; j < PC_W_I_DIM; j++) {
+      for (i = 0; i < PC_W_I_DIM; i++) {
         PC_W_INHIB[next] = norm2d(PC_W_I_VAR, i, j, k, dim_centre);
         total += PC_W_INHIB[next];
         next++;
@@ -211,8 +201,7 @@ void PosecellNetwork::pose_cell_builder()
     }
   }
 
-  for (next = 0; next < PC_W_I_DIM * PC_W_I_DIM * PC_W_I_DIM; next++)
-  {
+  for (next = 0; next < PC_W_I_DIM * PC_W_I_DIM * PC_W_I_DIM; next++) {
     PC_W_INHIB[next] /= total;
   }
 }
@@ -220,8 +209,7 @@ void PosecellNetwork::pose_cell_builder()
 PosecellNetwork::~PosecellNetwork()
 {
   int i;
-  for (i = 0; i < PC_DIM_TH; i++)
-  {
+  for (i = 0; i < PC_DIM_TH; i++) {
     free(posecells[i]);
     free(pca_new[i]);
   }
@@ -247,9 +235,12 @@ PosecellNetwork::~PosecellNetwork()
 
 bool PosecellNetwork::inject(int act_x, int act_y, int act_z, double energy)
 {
-
-  if (act_x < PC_DIM_XY && act_x >= 0 && act_y < PC_DIM_XY && act_y >= 0 && act_z < PC_DIM_TH && act_z >= 0)
+  if (
+    act_x < PC_DIM_XY && act_x >= 0 && act_y < PC_DIM_XY && act_y >= 0 && act_z < PC_DIM_TH &&
+    act_z >= 0)
+  {
     posecells[act_z][act_y][act_x] += energy;
+  }
 
   return true;
 }
@@ -262,14 +253,10 @@ bool PosecellNetwork::excite(void)
   memset(pca_new_memory, 0, posecells_memory_size);
 
   // loop in all three dimensions
-  for (i = 0; i < PC_DIM_XY; i++)
-  {
-    for (j = 0; j < PC_DIM_XY; j++)
-    {
-      for (k = 0; k < PC_DIM_TH; k++)
-      {
-        if (posecells[k][j][i] != 0)
-        {
+  for (i = 0; i < PC_DIM_XY; i++) {
+    for (j = 0; j < PC_DIM_XY; j++) {
+      for (k = 0; k < PC_DIM_TH; k++) {
+        if (posecells[k][j][i] != 0) {
           // spread the pose cell energy
           pose_cell_excite_helper(i, j, k);
         }
@@ -280,7 +267,6 @@ bool PosecellNetwork::excite(void)
   //  pc.Posecells = pca_new;
   memcpy(posecells_memory, pca_new_memory, posecells_memory_size);
   return true;
-
 }
 
 bool PosecellNetwork::inhibit(void)
@@ -291,14 +277,10 @@ bool PosecellNetwork::inhibit(void)
   memset(pca_new_memory, 0, posecells_memory_size);
 
   // loop through all dimensions
-  for (i = 0; i < PC_DIM_XY; i++)
-  {
-    for (j = 0; j < PC_DIM_XY; j++)
-    {
-      for (k = 0; k < PC_DIM_TH; k++)
-      {
-        if (posecells[k][j][i] != 0)
-        {
+  for (i = 0; i < PC_DIM_XY; i++) {
+    for (j = 0; j < PC_DIM_XY; j++) {
+      for (k = 0; k < PC_DIM_TH; k++) {
+        if (posecells[k][j][i] != 0) {
           // if there is energy in the current posecell,
           // spread the energy
           pose_cell_inhibit_helper(i, j, k);
@@ -307,8 +289,7 @@ bool PosecellNetwork::inhibit(void)
     }
   }
 
-  for (i = 0; i < posecells_elements; i++)
-  {
+  for (i = 0; i < posecells_elements; i++) {
     posecells_memory[i] -= pca_new_memory[i];
   }
 
@@ -318,14 +299,10 @@ bool PosecellNetwork::inhibit(void)
 bool PosecellNetwork::global_inhibit()
 {
   int i;
-  for (i = 0; i < posecells_elements; i++)
-  {
-    if (posecells_memory[i] >= PC_GLOBAL_INHIB)
-    {
+  for (i = 0; i < posecells_elements; i++) {
+    if (posecells_memory[i] >= PC_GLOBAL_INHIB) {
       posecells_memory[i] = (posecells_memory[i] - PC_GLOBAL_INHIB);
-    }
-    else
-    {
+    } else {
       posecells_memory[i] = 0;
     }
   }
@@ -336,22 +313,19 @@ bool PosecellNetwork::normalise(void)
 {
   int i;
   double total = 0;
-  for (i = 0; i < posecells_elements; i++)
-  {
+  for (i = 0; i < posecells_elements; i++) {
     total += posecells_memory[i];
   }
 
   assert(total > 0);
 
-  for (i = 0; i < posecells_elements; i++)
-  {
+  for (i = 0; i < posecells_elements; i++) {
     posecells_memory[i] /= total;
     //assert(posecells_memory[i] >= 0);
     //assert(!isnan(posecells_memory[i]));
   }
 
   return true;
-
 }
 
 bool PosecellNetwork::path_integration(double vtrans, double vrot)
@@ -362,16 +336,13 @@ bool PosecellNetwork::path_integration(double vtrans, double vrot)
   // scaling
   vtrans /= PC_CELL_X_SIZE;
 
-  if (vtrans < 0)
-  {
+  if (vtrans < 0) {
     vtrans = -vtrans;
     angle_to_add = M_PI;
   }
   // % shift in each th given by the th
   // for dir_pc=1:PARAMS.PC_DIM_TH
-  for (dir_pc = 0; dir_pc < PC_DIM_TH; dir_pc++)
-  {
-
+  for (dir_pc = 0; dir_pc < PC_DIM_TH; dir_pc++) {
     // % radians
     // dir = (dir_pc - 1) * pc.PC_C_SIZE_TH;
     double dir = dir_pc * PC_C_SIZE_TH + angle_to_add;
@@ -399,8 +370,7 @@ bool PosecellNetwork::path_integration(double vtrans, double vrot)
     memset(pca_new_memory, 0, sizeof(double) * (PC_DIM_XY + 2) * (PC_DIM_XY + 2));
 
     // pca_new(2:end-1,2:end-1) = pca90;
-    for (j = 0; j < PC_DIM_XY; j++)
-    {
+    for (j = 0; j < PC_DIM_XY; j++) {
       memcpy(&pca_new_rot_ptr[j + 1][1], &posecells[dir_pc][j][0], sizeof(double) * PC_DIM_XY);
     }
 
@@ -408,12 +378,12 @@ bool PosecellNetwork::path_integration(double vtrans, double vrot)
     weight_sw = vtrans * vtrans * cos(dir90) * sin(dir90);
 
     // weight_se = vtrans*sin(dir90) - vtrans^2 *cos(dir90) * sin(dir90);
-    weight_se = //vtrans*sin(dir90) - vtrans*vtrans*cos(dir90)*sin(dir90);
-        vtrans * sin(dir90) * (1.0 - vtrans * cos(dir90));
+    weight_se =  //vtrans*sin(dir90) - vtrans*vtrans*cos(dir90)*sin(dir90);
+      vtrans * sin(dir90) * (1.0 - vtrans * cos(dir90));
 
     // weight_nw = vtrans*cos(dir90) - vtrans^2 *cos(dir90) * sin(dir90);
-    weight_nw = // vtrans*cos(dir90) - vtrans*vtrans*cos(dir90)*sin(dir90);
-        vtrans * cos(dir90) * (1.0 - vtrans * sin(dir90));
+    weight_nw =  // vtrans*cos(dir90) - vtrans*vtrans*cos(dir90)*sin(dir90);
+      vtrans * cos(dir90) * (1.0 - vtrans * sin(dir90));
 
     // weight_ne = 1.0 - weight_sw - weight_se - weight_nw;
     weight_ne = 1.0 - weight_sw - weight_se - weight_nw;
@@ -428,51 +398,51 @@ bool PosecellNetwork::path_integration(double vtrans, double vrot)
     // % copy those shifted elements for the wrap around
     // pca_new = pca_new.*weight_ne + [pca_new(:,end) pca_new(:,1:end-1)].*weight_nw + [pca_new(end,:); pca_new(1:end-1,:)].*weight_se + circshift(pca_new, [1 1]).*weight_sw;
     // first element
-    pca_new_rot_ptr2[0][0] = pca_new_rot_ptr[0][0] * weight_ne + pca_new_rot_ptr[0][PC_DIM_XY + 1] * weight_se + pca_new_rot_ptr[PC_DIM_XY + 1][0] * weight_nw;
+    pca_new_rot_ptr2[0][0] = pca_new_rot_ptr[0][0] * weight_ne +
+      pca_new_rot_ptr[0][PC_DIM_XY + 1] * weight_se +
+      pca_new_rot_ptr[PC_DIM_XY + 1][0] * weight_nw;
 
     // first row
-    for (i = 1; i < PC_DIM_XY + 2; i++)
-    {
-      pca_new_rot_ptr2[0][i] = pca_new_rot_ptr[0][i] * weight_ne + pca_new_rot_ptr[0][i - 1] * weight_se + pca_new_rot_ptr[PC_DIM_XY + 1][i] * weight_nw;
+    for (i = 1; i < PC_DIM_XY + 2; i++) {
+      pca_new_rot_ptr2[0][i] = pca_new_rot_ptr[0][i] * weight_ne +
+        pca_new_rot_ptr[0][i - 1] * weight_se +
+        pca_new_rot_ptr[PC_DIM_XY + 1][i] * weight_nw;
     }
 
-    for (j = 1; j < PC_DIM_XY + 2; j++)
-    {
+    for (j = 1; j < PC_DIM_XY + 2; j++) {
       // first column
-      pca_new_rot_ptr2[j][0] = pca_new_rot_ptr[j][0] * weight_ne + pca_new_rot_ptr[j][PC_DIM_XY + 1] * weight_se + pca_new_rot_ptr[j - 1][0] * weight_nw;
+      pca_new_rot_ptr2[j][0] = pca_new_rot_ptr[j][0] * weight_ne +
+        pca_new_rot_ptr[j][PC_DIM_XY + 1] * weight_se +
+        pca_new_rot_ptr[j - 1][0] * weight_nw;
 
       // all the rest
-      for (i = 1; i < PC_DIM_XY + 2; i++)
-      {
-        pca_new_rot_ptr2[j][i] = pca_new_rot_ptr[j][i] * weight_ne + pca_new_rot_ptr[j][i - 1] * weight_se + pca_new_rot_ptr[j - 1][i] * weight_nw;
+      for (i = 1; i < PC_DIM_XY + 2; i++) {
+        pca_new_rot_ptr2[j][i] = pca_new_rot_ptr[j][i] * weight_ne +
+          pca_new_rot_ptr[j][i - 1] * weight_se +
+          pca_new_rot_ptr[j - 1][i] * weight_nw;
       }
     }
 
     circshift2d(pca_new_rot_ptr[0], posecells_plane_th, PC_DIM_XY + 2, PC_DIM_XY + 2, 1, 1);
 
-    for (i = 0; i < (PC_DIM_XY + 2) * (PC_DIM_XY + 2); i++)
-    {
+    for (i = 0; i < (PC_DIM_XY + 2) * (PC_DIM_XY + 2); i++) {
       pca_new_rot_ptr2[0][i] += pca_new_rot_ptr[0][i] * weight_sw;
     }
 
     // pca90 = pca_new(2:end-1,2:end-1);
-    for (j = 0; j < PC_DIM_XY; j++)
-    {
-      for (i = 0; i < PC_DIM_XY; i++)
-      {
+    for (j = 0; j < PC_DIM_XY; j++) {
+      for (i = 0; i < PC_DIM_XY; i++) {
         posecells[dir_pc][j][i] = pca_new_rot_ptr2[j + 1][i + 1];
       }
     }
 
     // pca90(2:end,1) = pca90(2:end,1) + pca_new(3:end-1,end);
-    for (i = 1; i < PC_DIM_XY; i++)
-    {
+    for (i = 1; i < PC_DIM_XY; i++) {
       posecells[dir_pc][0][i] += pca_new_rot_ptr2[PC_DIM_XY + 1][i + 1];
     }
 
     // pca90(1,2:end) = pca90(1,2:end) + pca_new(end,3:end-1);
-    for (j = 1; j < PC_DIM_XY; j++)
-    {
+    for (j = 1; j < PC_DIM_XY; j++) {
       posecells[dir_pc][j][0] += pca_new_rot_ptr2[j + 1][PC_DIM_XY + 1];
     }
 
@@ -490,8 +460,7 @@ bool PosecellNetwork::path_integration(double vtrans, double vrot)
   // % Path Integration - Theta
   // % Shift the pose cells +/- theta given by vrot
   // if vrot ~= 0
-  if (vrot != 0)
-  {
+  if (vrot != 0) {
     int i, j, k;
     double weight;
     double sign_vrot;
@@ -502,14 +471,12 @@ bool PosecellNetwork::path_integration(double vtrans, double vrot)
     // weight = mod(abs(vrot)/pc.PC_C_SIZE_TH, 1);
     weight = abs(vrot) / PC_C_SIZE_TH;
 
-    while (weight > 1)
-    {
+    while (weight > 1) {
       weight -= 1;
     }
 
     // if weight == 0
-    if (weight == 0)
-    {
+    if (weight == 0) {
       //     weight = 1.0;
       weight = 1.0;
     }
@@ -520,33 +487,28 @@ bool PosecellNetwork::path_integration(double vtrans, double vrot)
     shifty1 = (int)(sign_vrot * floor(abs(vrot) / PC_C_SIZE_TH));
     shifty2 = (int)(sign_vrot * ceil(abs(vrot) / PC_C_SIZE_TH));
 
-    while (shifty1 > 0)
-    {
+    while (shifty1 > 0) {
       shifty1 -= PC_DIM_TH;
     }
 
-    while (shifty2 > 0)
-    {
+    while (shifty2 > 0) {
       shifty2 -= PC_DIM_TH;
     }
 
-    for (j = 0; j < PC_DIM_XY; j++)
-    {
-      for (i = 0; i < PC_DIM_XY; i++)
-      {
-        for (k = 0; k < PC_DIM_TH; k++)
-        {
+    for (j = 0; j < PC_DIM_XY; j++) {
+      for (i = 0; i < PC_DIM_XY; i++) {
+        for (k = 0; k < PC_DIM_TH; k++) {
           newk1 = (k - shifty1) % PC_DIM_TH;
           newk2 = (k - shifty2) % PC_DIM_TH;
           assert(newk1 < PC_DIM_TH);
           assert(newk2 < PC_DIM_TH);
           assert(newk1 >= 0);
           assert(newk2 >= 0);
-          posecells[k][j][i] = pca_new[newk1][j][i] * (1.0 - weight) + pca_new[newk2][j][i] * weight;
+          posecells[k][j][i] =
+            pca_new[newk1][j][i] * (1.0 - weight) + pca_new[newk2][j][i] * weight;
           // assert(posecells[k][j][i] >= 0);
         }
       }
-
     }
     // end
   }
@@ -559,19 +521,15 @@ double PosecellNetwork::find_best()
   int i, j, k;
   double x = -1, y = -1, th = -1;
 
-  double * x_sums, *y_sums, *z_sums;
+  double * x_sums, * y_sums, * z_sums;
   double sum_x1, sum_x2, sum_y1, sum_y2;
 
   // % find the max activated cell
   double max = 0;
-  for (k = 0; k < PC_DIM_TH; k++)
-  {
-    for (j = 0; j < PC_DIM_XY; j++)
-    {
-      for (i = 0; i < PC_DIM_XY; i++)
-      {
-        if (posecells[k][j][i] > max)
-        {
+  for (k = 0; k < PC_DIM_TH; k++) {
+    for (j = 0; j < PC_DIM_XY; j++) {
+      for (i = 0; i < PC_DIM_XY; i++) {
+        if (posecells[k][j][i] > max) {
           max = posecells[k][j][i];
           x = (double)i;
           y = (double)j;
@@ -589,18 +547,18 @@ double PosecellNetwork::find_best()
   y_sums = pca_new[1][0];
   z_sums = pca_new[2][0];
 
-  for (k = (int)th; k < th + PC_CELLS_TO_AVG * 2 + 1; k++)
-  {
-    for (j = (int)y; j < y + PC_CELLS_TO_AVG * 2 + 1; j++)
-    {
-      for (i = (int)x; i < x + PC_CELLS_TO_AVG * 2 + 1; i++)
-      {
+  for (k = (int)th; k < th + PC_CELLS_TO_AVG * 2 + 1; k++) {
+    for (j = (int)y; j < y + PC_CELLS_TO_AVG * 2 + 1; j++) {
+      for (i = (int)x; i < x + PC_CELLS_TO_AVG * 2 + 1; i++) {
         // pca_new[PC_AVG_TH_WRAP[k]][PC_AVG_XY_WRAP[j]][PC_AVG_XY_WRAP[i]] =
         //  posecells[PC_AVG_TH_WRAP[k]][PC_AVG_XY_WRAP[j]][PC_AVG_XY_WRAP[i]];
 
-        z_sums[PC_AVG_TH_WRAP[k]] += posecells[PC_AVG_TH_WRAP[k]][PC_AVG_XY_WRAP[j]][PC_AVG_XY_WRAP[i]];
-        y_sums[PC_AVG_XY_WRAP[j]] += posecells[PC_AVG_TH_WRAP[k]][PC_AVG_XY_WRAP[j]][PC_AVG_XY_WRAP[i]];
-        x_sums[PC_AVG_XY_WRAP[i]] += posecells[PC_AVG_TH_WRAP[k]][PC_AVG_XY_WRAP[j]][PC_AVG_XY_WRAP[i]];
+        z_sums[PC_AVG_TH_WRAP[k]] +=
+          posecells[PC_AVG_TH_WRAP[k]][PC_AVG_XY_WRAP[j]][PC_AVG_XY_WRAP[i]];
+        y_sums[PC_AVG_XY_WRAP[j]] +=
+          posecells[PC_AVG_TH_WRAP[k]][PC_AVG_XY_WRAP[j]][PC_AVG_XY_WRAP[i]];
+        x_sums[PC_AVG_XY_WRAP[i]] +=
+          posecells[PC_AVG_TH_WRAP[k]][PC_AVG_XY_WRAP[j]][PC_AVG_XY_WRAP[i]];
       }
     }
   }
@@ -610,8 +568,7 @@ double PosecellNetwork::find_best()
   sum_x2 = 0;
   sum_y1 = 0;
   sum_y2 = 0;
-  for (i = 0; i < PC_DIM_XY; i++)
-  {
+  for (i = 0; i < PC_DIM_XY; i++) {
     sum_x1 += PC_XY_SUM_SIN_LOOKUP[i] * x_sums[i];
     sum_x2 += PC_XY_SUM_COS_LOOKUP[i] * x_sums[i];
     sum_y1 += PC_XY_SUM_SIN_LOOKUP[i] * y_sums[i];
@@ -619,45 +576,37 @@ double PosecellNetwork::find_best()
   }
 
   x = atan2(sum_x1, sum_x2) * (PC_DIM_XY) / (2.0 * M_PI) - 1.0;
-  while (x < 0)
-  {
+  while (x < 0) {
     x += PC_DIM_XY;
   }
-  while (x > PC_DIM_XY)
-  {
+  while (x > PC_DIM_XY) {
     x -= PC_DIM_XY;
   }
 
   y = atan2(sum_y1, sum_y2) * (PC_DIM_XY) / (2.0 * M_PI) - 1.0;
-  while (y < 0)
-  {
+  while (y < 0) {
     y += PC_DIM_XY;
   }
 
-  while (y > PC_DIM_XY)
-  {
+  while (y > PC_DIM_XY) {
     y -= PC_DIM_XY;
   }
 
   sum_x1 = 0;
   sum_x2 = 0;
-  for (i = 0; i < PC_DIM_TH; i++)
-  {
+  for (i = 0; i < PC_DIM_TH; i++) {
     sum_x1 += PC_TH_SUM_SIN_LOOKUP[i] * z_sums[i];
     sum_x2 += PC_TH_SUM_COS_LOOKUP[i] * z_sums[i];
   }
   th = atan2(sum_x1, sum_x2) * (PC_DIM_TH) / (2.0 * M_PI) - 1.0;
-  while (th < 0)
-  {
+  while (th < 0) {
     th += PC_DIM_TH;
   }
-  while (th > PC_DIM_TH)
-  {
+  while (th > PC_DIM_TH) {
     th -= PC_DIM_TH;
   }
 
-  if (x < 0 || y < 0 || th < 0 || x > PC_DIM_XY || y > PC_DIM_XY || th > PC_DIM_TH)
-  {
+  if (x < 0 || y < 0 || th < 0 || x > PC_DIM_XY || y > PC_DIM_XY || th > PC_DIM_TH) {
     cout << "ERROR: " << x << ", " << y << ", " << th << " out of range" << endl;
   }
 
@@ -668,27 +617,29 @@ double PosecellNetwork::find_best()
   return max;
 }
 
-double * PosecellNetwork::get_cells(void)
-{
-  return posecells_memory;
-}
+double * PosecellNetwork::get_cells(void) {return posecells_memory;}
 
 bool PosecellNetwork::set_cells(double * cells)
 {
-  if (memcpy(posecells_memory, cells, posecells_memory_size) != NULL)
+  if (memcpy(posecells_memory, cells, posecells_memory_size) != NULL) {
     return true;
-  else
+  } else {
     return false;
+  }
 }
 
 double PosecellNetwork::get_delta_pc(double x, double y, double th)
 {
   double pc_th_corrected = best_th - vt_delta_pc_th;
-  if (pc_th_corrected < 0) 
-	pc_th_corrected = PC_DIM_TH + pc_th_corrected;
-  if (pc_th_corrected >= PC_DIM_TH)
-	pc_th_corrected = pc_th_corrected - PC_DIM_TH;
-  return sqrt(pow(get_min_delta(best_x, x, PC_DIM_XY), 2) + pow(get_min_delta(best_y, y, PC_DIM_XY), 2) + pow(get_min_delta(pc_th_corrected, th, PC_DIM_TH), 2));
+  if (pc_th_corrected < 0) {
+    pc_th_corrected = PC_DIM_TH + pc_th_corrected;
+  }
+  if (pc_th_corrected >= PC_DIM_TH) {
+    pc_th_corrected = pc_th_corrected - PC_DIM_TH;
+  }
+  return sqrt(
+    pow(get_min_delta(best_x, x, PC_DIM_XY), 2) + pow(get_min_delta(best_y, y, PC_DIM_XY), 2) +
+    pow(get_min_delta(pc_th_corrected, th, PC_DIM_TH), 2));
 }
 
 double PosecellNetwork::get_min_delta(double d1, double d2, double max)
@@ -702,12 +653,9 @@ bool PosecellNetwork::pose_cell_excite_helper(int x, int y, int z)
   int xl, yl, zl, xw, yw, zw, excite_index = 0;
 
   // loop in all dimensions
-  for (zl = z; zl < z + PC_W_E_DIM; zl++)
-  {
-    for (yl = y; yl < y + PC_W_E_DIM; yl++)
-    {
-      for (xl = x; xl < x + PC_W_E_DIM; xl++)
-      {
+  for (zl = z; zl < z + PC_W_E_DIM; zl++) {
+    for (yl = y; yl < y + PC_W_E_DIM; yl++) {
+      for (xl = x; xl < x + PC_W_E_DIM; xl++) {
         // generate indices by wrapping where necessary
         xw = PC_E_XY_WRAP[xl];
         yw = PC_E_XY_WRAP[yl];
@@ -728,12 +676,9 @@ bool PosecellNetwork::pose_cell_inhibit_helper(int x, int y, int z)
   int xl, yl, zl, xw, yw, zw, inhib_index = 0;
 
   // loop through all the dimensions
-  for (zl = z; zl < z + PC_W_I_DIM; zl++)
-  {
-    for (yl = y; yl < y + PC_W_I_DIM; yl++)
-    {
-      for (xl = x; xl < x + PC_W_I_DIM; xl++)
-      {
+  for (zl = z; zl < z + PC_W_I_DIM; zl++) {
+    for (yl = y; yl < y + PC_W_I_DIM; yl++) {
+      for (xl = x; xl < x + PC_W_I_DIM; xl++) {
         // generate indices by wrapping where necessary
         xw = PC_I_XY_WRAP[xl];
         yw = PC_I_XY_WRAP[yl];
@@ -748,46 +693,34 @@ bool PosecellNetwork::pose_cell_inhibit_helper(int x, int y, int z)
   return true;
 }
 
-void PosecellNetwork::circshift2d(double * array, double * array_buffer, int dimx, int dimy, int shiftx, int shifty)
+void PosecellNetwork::circshift2d(
+  double * array, double * array_buffer, int dimx, int dimy, int shiftx, int shifty)
 {
-  if (shifty == 0)
-  {
-    if (shiftx == 0)
-    {
+  if (shifty == 0) {
+    if (shiftx == 0) {
       return;
     }
 
     memcpy(array_buffer, array, dimx * dimy * sizeof(double));
-  }
-  else if (shifty > 0)
-  {
+  } else if (shifty > 0) {
     memcpy(array_buffer, &array[(dimy - shifty) * dimx], shifty * dimx * sizeof(double));
     memcpy(&array_buffer[shifty * dimx], array, (dimy - shifty) * dimx * sizeof(double));
-  }
-  else
-  {
-    memcpy(array_buffer, &array[-shifty * dimx], (dimy + shifty) * dimx * sizeof(double));
-    memcpy(&array_buffer[(dimy + shifty) * dimx], array, -shifty * dimx * sizeof(double));
+  } else {
+    memcpy(array_buffer, &array[-shifty * dimx], (dimx + shifty) * dimy * sizeof(double));
+    memcpy(&array_buffer[(dimx + shifty) * dimx], array, -shifty * dimx * sizeof(double));
   }
 
-  if (shiftx == 0)
-  {
+  if (shiftx == 0) {
     memcpy(array, array_buffer, dimx * dimy * sizeof(double));
-  }
-  else if (shiftx > 0)
-  {
+  } else if (shiftx > 0) {
     int i;
-    for (i = 0; i < dimy; i++)
-    {
+    for (i = 0; i < dimy; i++) {
       memcpy(&array[i * dimx], &array_buffer[i * dimx + dimx - shiftx], shiftx * sizeof(double));
       memcpy(&array[i * dimx + shiftx], &array_buffer[i * dimx], (dimx - shiftx) * sizeof(double));
     }
-  }
-  else
-  {
+  } else {
     int i;
-    for (i = 0; i < dimy; i++)
-    {
+    for (i = 0; i < dimy; i++) {
       memcpy(&array[i * dimx], &array_buffer[i * dimx - shiftx], (dimx + shiftx) * sizeof(double));
       memcpy(&array[i * dimx + dimx + shiftx], &array_buffer[i * dimx], -shiftx * sizeof(double));
     }
@@ -804,13 +737,11 @@ int PosecellNetwork::rot90_square(double ** array, int dim, int rot)
 
   int i, j, quad, id, jd, is1, js1;
 
-  if (rot < 0)
-  {
+  if (rot < 0) {
     rot += 4;
   }
 
-  switch (rot % 4)
-  {
+  switch (rot % 4) {
     case 0:
       return 1;
     case 1:
@@ -832,20 +763,16 @@ int PosecellNetwork::rot90_square(double ** array, int dim, int rot)
       d = 0;
       break;
     default:
-	return 1;
+      return 1;
   }
 
-  if (rot % 2 == 1)
-  {
-    for (j = 0; j < (int)(centre) + (1 - dim % 2); j++)
-    {
-      for (i = 0; i < (int)centre + 1; i++)
-      {
+  if (rot % 2 == 1) {
+    for (j = 0; j < (int)(centre) + (1 - dim % 2); j++) {
+      for (i = 0; i < (int)centre + 1; i++) {
         id = i;
         jd = j;
         tmp_old = array[j][i];
-        for (quad = 0; quad < 4; quad++)
-        {
+        for (quad = 0; quad < 4; quad++) {
           is1 = id;
           js1 = jd;
           id = (int)(a * ((float)(is1) - centre) + b * ((float)(js1) - centre) + centre);
@@ -856,31 +783,27 @@ int PosecellNetwork::rot90_square(double ** array, int dim, int rot)
         }
       }
     }
-  }
-  else
-  {
+  } else {
     rot90_square(array, dim, 1);
     rot90_square(array, dim, 1);
   }
   return true;
 }
 
-int PosecellNetwork::generate_wrap(int * wrap, int start1, int end1, int start2, int end2, int start3, int end3)
+int PosecellNetwork::generate_wrap(
+  int * wrap, int start1, int end1, int start2, int end2, int start3, int end3)
 {
   int i, j;
   i = 0;
-  for (j = start1; j < end1; i++, j++)
-  {
+  for (j = start1; j < end1; i++, j++) {
     wrap[i] = j;
   }
 
-  for (j = start2; j < end2; i++, j++)
-  {
+  for (j = start2; j < end2; i++, j++) {
     wrap[i] = j;
   }
 
-  for (j = start3; j < end3; i++, j++)
-  {
+  for (j = start3; j < end3; i++, j++) {
     wrap[i] = j;
   }
   return 1;
@@ -888,8 +811,11 @@ int PosecellNetwork::generate_wrap(int * wrap, int start1, int end1, int start2,
 
 double PosecellNetwork::norm2d(double var, int x, int y, int z, int dim_centre)
 {
-  return 1.0 / (var * sqrt(2.0 * M_PI))
-      * exp((-(x - dim_centre) * (x - dim_centre) - (y - dim_centre) * (y - dim_centre) - (z - dim_centre) * (z - dim_centre)) / (2.0 * var * var));
+  return 1.0 / (var * sqrt(2.0 * M_PI)) *
+         exp(
+    (-(x - dim_centre) * (x - dim_centre) - (y - dim_centre) * (y - dim_centre) -
+    (z - dim_centre) * (z - dim_centre)) /
+    (2.0 * var * var));
 }
 
 void PosecellNetwork::create_experience()
@@ -905,30 +831,26 @@ void PosecellNetwork::create_experience()
   pcvt->exps.push_back(current_exp);
 }
 
-
 PosecellNetwork::PosecellAction PosecellNetwork::get_action()
 {
   PosecellExperience * experience;
   double delta_pc;
   PosecellAction action = NO_ACTION;
 
-  if (odo_update && vt_update)
-  {
+  if (odo_update && vt_update) {
     odo_update = false;
     vt_update = false;
 
   } else {
-	return action;
+    return action;
   }
 
-  if (visual_templates.size() == 0)
-  {
+  if (visual_templates.size() == 0) {
     action = NO_ACTION;
     return action;
   }
 
-  if (experiences.size() == 0)
-  {
+  if (experiences.size() == 0) {
     create_experience();
     action = CREATE_NODE;
   } else {
@@ -937,13 +859,10 @@ PosecellNetwork::PosecellAction PosecellNetwork::get_action()
     delta_pc = get_delta_pc(experience->x_pc, experience->y_pc, experience->th_pc);
 
     PosecellVisualTemplate * pcvt = &visual_templates[current_vt];
-    if (pcvt->exps.size() == 0)
-    {
+    if (pcvt->exps.size() == 0) {
       create_experience();
       action = CREATE_NODE;
-     }
-    else if (delta_pc > EXP_DELTA_PC_THRESHOLD || current_vt != prev_vt)
-    {
+    } else if (delta_pc > EXP_DELTA_PC_THRESHOLD || current_vt != prev_vt) {
       // go through all the exps associated with the current view and find the one with the closest delta_pc
       int matched_exp_id = -1;
       unsigned int i;
@@ -951,48 +870,39 @@ PosecellNetwork::PosecellAction PosecellNetwork::get_action()
       double min_delta = DBL_MAX;
       double delta_pc;
 
-    // find the closest experience in pose cell space
-      for (i = 0; i < pcvt->exps.size(); i++)
-      {
+      // find the closest experience in pose cell space
+      for (i = 0; i < pcvt->exps.size(); i++) {
         // make sure we aren't comparing to the current experience
-        if (current_exp == pcvt->exps[i])
+        if (current_exp == pcvt->exps[i]) {
           continue;
+        }
 
         experience = &experiences[pcvt->exps[i]];
         delta_pc = get_delta_pc(experience->x_pc, experience->y_pc, experience->th_pc);
 
-        if (delta_pc < min_delta)
-        {
+        if (delta_pc < min_delta) {
           min_delta = delta_pc;
           min_delta_id = pcvt->exps[i];
         }
       }
 
       // if an experience is closer than the thres create a link
-      if (min_delta < EXP_DELTA_PC_THRESHOLD)
-      {
+      if (min_delta < EXP_DELTA_PC_THRESHOLD) {
         matched_exp_id = min_delta_id;
         action = CREATE_EDGE;
       }
 
-      if (current_exp != (unsigned)matched_exp_id)
-      {
-        if (matched_exp_id == -1)
-        {
+      if (current_exp != (unsigned)matched_exp_id) {
+        if (matched_exp_id == -1) {
           create_experience();
           action = CREATE_NODE;
-        }
-        else
-        {
+        } else {
           current_exp = matched_exp_id;
-          if (action == NO_ACTION)
-          {
+          if (action == NO_ACTION) {
             action = SET_NODE;
           }
         }
-      }
-      else if (current_vt == prev_vt)
-      {
+      } else if (current_vt == prev_vt) {
         create_experience();
         action = CREATE_NODE;
       }
@@ -1025,60 +935,54 @@ void PosecellNetwork::create_view_template()
   pcvt->pc_y = y();
   pcvt->pc_th = th();
   pcvt->decay = VT_ACTIVE_DECAY;
-
 }
 
 void PosecellNetwork::on_view_template(unsigned int vt, double vt_rad)
 {
   PosecellVisualTemplate * pcvt;
 
-  if (vt >= visual_templates.size())
-  {
+  if (vt >= visual_templates.size()) {
     // must be a new template
     create_view_template();
-    assert(vt == visual_templates.size()-1);
-  }
-  else
-  {
+    assert(vt == visual_templates.size() - 1);
+  } else {
     // the template must exist
     pcvt = &visual_templates[vt];
 
     // this prevents energy injected in recently created vt's
-    if (vt < (visual_templates.size() - 10))
-    {
-      if (vt != current_vt)
-      {
+    if (vt < (visual_templates.size() - 10)) {
+      if (vt != current_vt) {
       } else {
         pcvt->decay += VT_ACTIVE_DECAY;
       }
 
       // this line is magic. ask michael about it
       double energy = PC_VT_INJECT_ENERGY * 1.0 / 30.0 * (30.0 - exp(1.2 * pcvt->decay));
-      if (energy > 0)
-      {
-		vt_delta_pc_th = vt_rad / (2.0*M_PI) * PC_DIM_TH;
-		double pc_th_corrected = pcvt->pc_th + vt_rad / (2.0*M_PI) * PC_DIM_TH;
-		if (pc_th_corrected < 0) 
-			pc_th_corrected = PC_DIM_TH + pc_th_corrected;
-		if (pc_th_corrected >= PC_DIM_TH)
-			pc_th_corrected = pc_th_corrected - PC_DIM_TH;
+      if (energy > 0) {
+        vt_delta_pc_th = vt_rad / (2.0 * M_PI) * PC_DIM_TH;
+        double pc_th_corrected = pcvt->pc_th + vt_rad / (2.0 * M_PI) * PC_DIM_TH;
+        if (pc_th_corrected < 0) {
+          pc_th_corrected = PC_DIM_TH + pc_th_corrected;
+        }
+        if (pc_th_corrected >= PC_DIM_TH) {
+          pc_th_corrected = pc_th_corrected - PC_DIM_TH;
+        }
         inject((int)pcvt->pc_x, (int)pcvt->pc_y, (int)pc_th_corrected, energy);
       }
     }
   }
 
-  for (unsigned int i=0; i < visual_templates.size(); i++)
-  {
+  for (unsigned int i = 0; i < visual_templates.size(); i++) {
     visual_templates[i].decay -= PC_VT_RESTORE;
-    if (visual_templates[i].decay < VT_ACTIVE_DECAY)
+    if (visual_templates[i].decay < VT_ACTIVE_DECAY) {
       visual_templates[i].decay = VT_ACTIVE_DECAY;
+    }
   }
 
   prev_vt = current_vt;
   current_vt = vt;
 
-vt_update = true;
+  vt_update = true;
 }
 
-} // namespace ratslam
-
+}  // namespace ratslam

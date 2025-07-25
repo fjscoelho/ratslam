@@ -26,39 +26,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "local_view_match.h"
-#include "utils.h"
+// This file implements the LocalViewMatch class for RatSLAM.
+// All code is written to be compatible with ROS 2 and follows ROS 2 C++ style guidelines.
+// For code style, see ament_uncrustify, ament_cpplint, and ament_clang_format.
 
+#include "local_view_match.h"
+
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <iostream>
-#include <iomanip>
-using namespace std;
-#include <boost/foreach.hpp>
-#include <algorithm>
 
+#include <iomanip>
+#include <iostream>
+
+#include "utils.h"
+using namespace std;
 #include <stdio.h>
+
+#include <algorithm>
+#include <boost/foreach.hpp>
 
 namespace ratslam
 {
 
 LocalViewMatch::LocalViewMatch(
-    double vt_min_patch_normalisation_std,
-    int vt_patch_normalisation,
-    double vt_normalisation,
-    int vt_shift_match,
-    int vt_step_match,
-    int vt_panoramic,
-    double vt_match_threshold,
-    bool vt_threshold_condition,
-    int template_x_size,
-    int template_y_size,
-    int image_crop_x_min,
-    int image_crop_x_max,
-    int image_crop_y_min,
-    int image_crop_y_max
-)
+  double vt_min_patch_normalisation_std, int vt_patch_normalisation, double vt_normalisation,
+  int vt_shift_match, int vt_step_match, int vt_panoramic, double vt_match_threshold,
+  bool vt_threshold_condition, int template_x_size, int template_y_size, int image_crop_x_min,
+  int image_crop_x_max, int image_crop_y_min, int image_crop_y_max)
 {
   VT_MIN_PATCH_NORMALISATION_STD = vt_min_patch_normalisation_std;
   VT_PATCH_NORMALISATION = vt_patch_normalisation;
@@ -82,24 +77,25 @@ LocalViewMatch::LocalViewMatch(
   prev_vt = 0;
 }
 
+LocalViewMatch::~LocalViewMatch() {}
 
-LocalViewMatch::~LocalViewMatch()
+void LocalViewMatch::on_image(
+  const unsigned char * view_rgb, bool greyscale, unsigned int image_width,
+  unsigned int image_height)
 {
-
-}
-
-void LocalViewMatch::on_image(const unsigned char *view_rgb, bool greyscale, unsigned int image_width, unsigned int image_height)
-{
-  if (view_rgb == NULL)
+  if (view_rgb == NULL) {
     return;
+  }
 
   IMAGE_WIDTH = image_width;
   IMAGE_HEIGHT = image_height;
 
-  if (IMAGE_VT_X_RANGE_MAX == -1)
+  if (IMAGE_VT_X_RANGE_MAX == -1) {
     IMAGE_VT_X_RANGE_MAX = IMAGE_WIDTH;
-  if (IMAGE_VT_Y_RANGE_MAX == -1)
+  }
+  if (IMAGE_VT_Y_RANGE_MAX == -1) {
     IMAGE_VT_Y_RANGE_MAX = IMAGE_HEIGHT;
+  }
 
   this->view_rgb = view_rgb;
   this->greyscale = greyscale;
@@ -108,35 +104,31 @@ void LocalViewMatch::on_image(const unsigned char *view_rgb, bool greyscale, uns
   prev_vt = get_current_vt();
   unsigned int vt_match_id;
   compare(vt_error, vt_match_id);
-  if ((vt_error <= VT_MATCH_THRESHOLD) && VT_THRESHOLD_CONDITION)
-  {
+  if ((vt_error <= VT_MATCH_THRESHOLD) && VT_THRESHOLD_CONDITION) {
     set_current_vt((int)vt_match_id);
     cout << "VTM[" << setw(4) << get_current_vt() << "] " << endl;
     cout.flush();
-  }
-  else
-  {
+  } else {
     vt_relative_rad = 0;
     set_current_vt(create_template());
     cout << "VTN[" << setw(4) << get_current_vt() << "] " << endl;
     cout.flush();
   }
-
 }
 
-
-void LocalViewMatch::clip_view_x_y(int &x, int &y)
+void LocalViewMatch::clip_view_x_y(int & x, int & y)
 {
-  if (x < 0)
+  if (x < 0) {
     x = 0;
-  else if (x > TEMPLATE_X_SIZE - 1)
+  } else if (x > TEMPLATE_X_SIZE - 1) {
     x = TEMPLATE_X_SIZE - 1;
+  }
 
-  if (y < 0)
+  if (y < 0) {
     y = 0;
-  else if (y > TEMPLATE_Y_SIZE - 1)
+  } else if (y > TEMPLATE_Y_SIZE - 1) {
     y = TEMPLATE_Y_SIZE - 1;
-
+  }
 }
 
 void LocalViewMatch::convert_view_to_view_template(bool grayscale)
@@ -148,21 +140,19 @@ void LocalViewMatch::convert_view_to_view_template(bool grayscale)
   int y_block_size = sub_range_y / TEMPLATE_Y_SIZE;
   int pos;
 
-  for (unsigned int i; i < current_view.size(); i++)
+  for (unsigned int i; i < current_view.size(); i++) {
     current_view[i] = 0;
+  }
 
-  if (grayscale)
-  {
-    for (int y_block = IMAGE_VT_Y_RANGE_MIN, y_block_count = 0; y_block_count < TEMPLATE_Y_SIZE; y_block +=
-        y_block_size, y_block_count++)
+  if (grayscale) {
+    for (int y_block = IMAGE_VT_Y_RANGE_MIN, y_block_count = 0; y_block_count < TEMPLATE_Y_SIZE;
+      y_block += y_block_size, y_block_count++)
     {
-      for (int x_block = IMAGE_VT_X_RANGE_MIN, x_block_count = 0; x_block_count < TEMPLATE_X_SIZE; x_block +=
-          x_block_size, x_block_count++)
+      for (int x_block = IMAGE_VT_X_RANGE_MIN, x_block_count = 0; x_block_count < TEMPLATE_X_SIZE;
+        x_block += x_block_size, x_block_count++)
       {
-        for (int x = x_block; x < (x_block + x_block_size); x++)
-        {
-          for (int y = y_block; y < (y_block + y_block_size); y++)
-          {
+        for (int x = x_block; x < (x_block + x_block_size); x++) {
+          for (int y = y_block; y < (y_block + y_block_size); y++) {
             pos = (x + y * IMAGE_WIDTH);
             current_view[data_next] += (double)(view_rgb[pos]);
           }
@@ -172,22 +162,18 @@ void LocalViewMatch::convert_view_to_view_template(bool grayscale)
         data_next++;
       }
     }
-  }
-  else
-  {
-    for (int y_block = IMAGE_VT_Y_RANGE_MIN, y_block_count = 0; y_block_count < TEMPLATE_Y_SIZE; y_block +=
-        y_block_size, y_block_count++)
+  } else {
+    for (int y_block = IMAGE_VT_Y_RANGE_MIN, y_block_count = 0; y_block_count < TEMPLATE_Y_SIZE;
+      y_block += y_block_size, y_block_count++)
     {
-      for (int x_block = IMAGE_VT_X_RANGE_MIN, x_block_count = 0; x_block_count < TEMPLATE_X_SIZE; x_block +=
-          x_block_size, x_block_count++)
+      for (int x_block = IMAGE_VT_X_RANGE_MIN, x_block_count = 0; x_block_count < TEMPLATE_X_SIZE;
+        x_block += x_block_size, x_block_count++)
       {
-        for (int x = x_block; x < (x_block + x_block_size); x++)
-        {
-          for (int y = y_block; y < (y_block + y_block_size); y++)
-          {
+        for (int x = x_block; x < (x_block + x_block_size); x++) {
+          for (int y = y_block; y < (y_block + y_block_size); y++) {
             pos = (x + y * IMAGE_WIDTH) * 3;
-            current_view[data_next] += ((double)(view_rgb[pos]) + (double)(view_rgb[pos + 1])
-                + (double)(view_rgb[pos + 2]));
+            current_view[data_next] +=
+              ((double)(view_rgb[pos]) + (double)(view_rgb[pos + 1]) + (double)(view_rgb[pos + 2]));
           }
         }
         current_view[data_next] /= (255.0 * 3.0);
@@ -198,27 +184,24 @@ void LocalViewMatch::convert_view_to_view_template(bool grayscale)
     }
   }
 
-  if (VT_NORMALISATION > 0)
-  {
+  if (VT_NORMALISATION > 0) {
     double avg_value = 0;
 
-    for (unsigned int i = 0; i < current_view.size(); i++)
-    {
+    for (unsigned int i = 0; i < current_view.size(); i++) {
       avg_value += current_view[i];
     }
 
     avg_value /= current_view.size();
 
-    for (unsigned int i = 0; i < current_view.size(); i++)
-    {
-      current_view[i] = std::max(0.0, std::min(current_view[i] * VT_NORMALISATION / avg_value, 1.0));
+    for (unsigned int i = 0; i < current_view.size(); i++) {
+      current_view[i] =
+        std::max(0.0, std::min(current_view[i] * VT_NORMALISATION / avg_value, 1.0));
     }
   }
 
   // now do patch normalisation
   // +- patch size on the pixel, ie 4 will give a 9x9
-  if (VT_PATCH_NORMALISATION > 0)
-  {
+  if (VT_PATCH_NORMALISATION > 0) {
     int patch_size = VT_PATCH_NORMALISATION;
     int patch_total = (patch_size * 2 + 1) * (patch_size * 2 + 1);
     double patch_sum;
@@ -230,19 +213,16 @@ void LocalViewMatch::convert_view_to_view_template(bool grayscale)
     // first make a copy of the view
     std::vector<double> current_view_copy;
     current_view_copy.resize(current_view.size());
-    for (unsigned int i = 0; i < current_view.size(); i++)
+    for (unsigned int i = 0; i < current_view.size(); i++) {
       current_view_copy[i] = current_view[i];
+    }
 
     // this code could be significantly optimimised ....
-    for (int x = 0; x < TEMPLATE_X_SIZE; x++)
-    {
-      for (int y = 0; y < TEMPLATE_Y_SIZE; y++)
-      {
+    for (int x = 0; x < TEMPLATE_X_SIZE; x++) {
+      for (int y = 0; y < TEMPLATE_Y_SIZE; y++) {
         patch_sum = 0;
-        for (int patch_x = x - patch_size; patch_x < x + patch_size + 1; patch_x++)
-        {
-          for (int patch_y = y - patch_size; patch_y < y + patch_size + 1; patch_y++)
-          {
+        for (int patch_x = x - patch_size; patch_x < x + patch_size + 1; patch_x++) {
+          for (int patch_y = y - patch_size; patch_y < y + patch_size + 1; patch_y++) {
             patch_x_clip = patch_x;
             patch_y_clip = patch_y;
             clip_view_x_y(patch_x_clip, patch_y_clip);
@@ -253,25 +233,28 @@ void LocalViewMatch::convert_view_to_view_template(bool grayscale)
         patch_mean = patch_sum / patch_total;
 
         patch_sum = 0;
-        for (int patch_x = x - patch_size; patch_x < x + patch_size + 1; patch_x++)
-        {
-          for (int patch_y = y - patch_size; patch_y < y + patch_size + 1; patch_y++)
-          {
+        for (int patch_x = x - patch_size; patch_x < x + patch_size + 1; patch_x++) {
+          for (int patch_y = y - patch_size; patch_y < y + patch_size + 1; patch_y++) {
             patch_x_clip = patch_x;
             patch_y_clip = patch_y;
             clip_view_x_y(patch_x_clip, patch_y_clip);
 
-            patch_sum += ((current_view_copy[patch_x_clip + patch_y_clip * TEMPLATE_X_SIZE] - patch_mean)
-                * (current_view_copy[patch_x_clip + patch_y_clip * TEMPLATE_X_SIZE] - patch_mean));
+            patch_sum +=
+              ((current_view_copy[patch_x_clip + patch_y_clip * TEMPLATE_X_SIZE] - patch_mean) *
+              (current_view_copy[patch_x_clip + patch_y_clip * TEMPLATE_X_SIZE] - patch_mean));
           }
         }
 
         patch_std = sqrt(patch_sum / patch_total);
 
-        if (patch_std < VT_MIN_PATCH_NORMALISATION_STD)
+        if (patch_std < VT_MIN_PATCH_NORMALISATION_STD) {
           current_view[x + y * TEMPLATE_X_SIZE] = 0.5;
-        else {
-          current_view[x + y * TEMPLATE_X_SIZE] = max((double) 0, min(1.0, (((current_view_copy[x + y * TEMPLATE_X_SIZE] - patch_mean) / patch_std) + 3.0)/6.0 ));
+        } else {
+          current_view[x + y * TEMPLATE_X_SIZE] = max(
+            (double)0,
+            min(
+              1.0, (((current_view_copy[x + y * TEMPLATE_X_SIZE] - patch_mean) / patch_std) + 3.0) /
+              6.0));
         }
       }
     }
@@ -280,11 +263,11 @@ void LocalViewMatch::convert_view_to_view_template(bool grayscale)
   double sum = 0;
 
   // find the mean of the data
-  for (int i = 0; i < current_view.size(); i++)
+  for (int i = 0; i < current_view.size(); i++) {
     sum += current_view[i];
+  }
 
-  current_mean = sum/current_view.size();
-
+  current_mean = sum / current_view.size();
 }
 
 // create and add a visual template to the collection
@@ -296,27 +279,27 @@ int LocalViewMatch::create_template()
   new_template->id = templates.size() - 1;
   double * data_ptr = &current_view[0];
   new_template->data.reserve(TEMPLATE_SIZE);
-  for (int i = 0; i < TEMPLATE_SIZE; i++)
+  for (int i = 0; i < TEMPLATE_SIZE; i++) {
     new_template->data.push_back(*(data_ptr++));
+  }
 
   new_template->mean = current_mean;
 
   return templates.size() - 1;
 }
 
-// compare a visual template to all the stored templates, allowing for 
+// compare a visual template to all the stored templates, allowing for
 // slen pixel shifts in each direction
 // returns the matching template and the MSE
-void LocalViewMatch::compare(double &vt_err, unsigned int &vt_match_id)
+void LocalViewMatch::compare(double & vt_err, unsigned int & vt_match_id)
 {
-  if (templates.size() == 0)
-  {
+  if (templates.size() == 0) {
     vt_err = DBL_MAX;
     vt_error = vt_err;
     return;
   }
 
-  double *data = &current_view[0];
+  double * data = &current_view[0];
   double mindiff, cdiff;
   mindiff = DBL_MAX;
 
@@ -326,15 +309,15 @@ void LocalViewMatch::compare(double &vt_err, unsigned int &vt_match_id)
   vt_err = DBL_MAX;
   int min_template = 0;
 
-  double *template_ptr;
-  double *column_ptr;
-  double *template_row_ptr;
-  double *column_row_ptr;
-  double *template_start_ptr;
-  double *column_start_ptr;
+  double * template_ptr;
+  double * column_ptr;
+  double * template_row_ptr;
+  double * column_row_ptr;
+  double * template_start_ptr;
+  double * column_start_ptr;
   int row_size;
   int sub_row_size;
-  double *column_end_ptr;
+  double * column_end_ptr;
   VisualTemplate vt;
   int min_offset;
 
@@ -349,143 +332,145 @@ void LocalViewMatch::compare(double &vt_err, unsigned int &vt_match_id)
 
   auto begin = std::chrono::high_resolution_clock::now();
 
-  if (VT_PANORAMIC)
-  {
+  if (VT_PANORAMIC) {
+    BOOST_FOREACH(vt, templates) {
+      if (abs(current_mean - vt.mean) > VT_MATCH_THRESHOLD + epsilon) {
+        continue;
+      }
 
-	BOOST_FOREACH(vt, templates)
-	{
+      // for each vt try matching the view at different offsets
+      // try to fast break based on error already great than previous errors
+      // handles 2d images shifting only in the x direction
+      // note I haven't tested on a 1d yet.
+      for (offset = 0; offset < TEMPLATE_X_SIZE; offset += VT_STEP_MATCH) {
+        cdiff = 0;
+        template_start_ptr = &vt.data[0] + offset;
+        column_start_ptr = &data[0];
+        row_size = TEMPLATE_X_SIZE;
+        column_end_ptr = &data[0] + TEMPLATE_SIZE - offset;
+        sub_row_size = TEMPLATE_X_SIZE - offset;
 
-	if (abs(current_mean - vt.mean) > VT_MATCH_THRESHOLD + epsilon)
-	  continue;
+        // do from offset to end
+        for (column_row_ptr = column_start_ptr, template_row_ptr = template_start_ptr;
+          column_row_ptr < column_end_ptr;
+          column_row_ptr += row_size, template_row_ptr += row_size)
+        {
+          for (column_ptr = column_row_ptr, template_ptr = template_row_ptr;
+            column_ptr < column_row_ptr + sub_row_size; column_ptr++, template_ptr++)
+          {
+            cdiff += abs(*column_ptr - *template_ptr);
+          }
 
-	// for each vt try matching the view at different offsets
-	// try to fast break based on error already great than previous errors
-	// handles 2d images shifting only in the x direction
-	// note I haven't tested on a 1d yet.
-	for (offset = 0; offset < TEMPLATE_X_SIZE; offset += VT_STEP_MATCH)
-	{
-	  cdiff = 0;
-	  template_start_ptr = &vt.data[0] + offset;
-	  column_start_ptr = &data[0];
-	  row_size = TEMPLATE_X_SIZE;
-	  column_end_ptr = &data[0] + TEMPLATE_SIZE - offset;
-	  sub_row_size = TEMPLATE_X_SIZE - offset;
+          // fast breaks
+          if (cdiff > mindiff) {
+            break;
+          }
+        }
 
-	  // do from offset to end
-	  for (column_row_ptr = column_start_ptr, template_row_ptr = template_start_ptr; column_row_ptr < column_end_ptr; column_row_ptr+=row_size, template_row_ptr+=row_size)
-	  {
-		for (column_ptr = column_row_ptr, template_ptr = template_row_ptr; column_ptr < column_row_ptr + sub_row_size; column_ptr++, template_ptr++)
-		{
-		  cdiff += abs(*column_ptr - *template_ptr);
-		}
+        // do from start to offset
+        template_start_ptr = &vt.data[0];
+        column_start_ptr = &data[0] + TEMPLATE_X_SIZE - offset;
+        row_size = TEMPLATE_X_SIZE;
+        column_end_ptr = &data[0] + TEMPLATE_SIZE;
+        sub_row_size = offset;
+        for (column_row_ptr = column_start_ptr, template_row_ptr = template_start_ptr;
+          column_row_ptr < column_end_ptr;
+          column_row_ptr += row_size, template_row_ptr += row_size)
+        {
+          for (column_ptr = column_row_ptr, template_ptr = template_row_ptr;
+            column_ptr < column_row_ptr + sub_row_size; column_ptr++, template_ptr++)
+          {
+            cdiff += abs(*column_ptr - *template_ptr);
+          }
 
-		// fast breaks
-		if (cdiff > mindiff)
-		  break;
-	  }
+          // fast breaks
+          if (cdiff > mindiff) {
+            break;
+          }
+        }
 
-	  // do from start to offset
-	  template_start_ptr = &vt.data[0];
-	  column_start_ptr = &data[0] + TEMPLATE_X_SIZE - offset;
-	  row_size = TEMPLATE_X_SIZE;
-	  column_end_ptr = &data[0] + TEMPLATE_SIZE;
-	  sub_row_size = offset;
-	  for (column_row_ptr = column_start_ptr, template_row_ptr = template_start_ptr; column_row_ptr < column_end_ptr; column_row_ptr+=row_size, template_row_ptr+=row_size)
-	  {
-		for (column_ptr = column_row_ptr, template_ptr = template_row_ptr; column_ptr < column_row_ptr + sub_row_size; column_ptr++, template_ptr++)
-		{
-		  cdiff += abs(*column_ptr - *template_ptr);
-		}
+        if (cdiff < mindiff) {
+          mindiff = cdiff;
+          min_template = vt.id;
+          min_offset = offset;
+        }
+      }
+    }
 
-		// fast breaks
-		if (cdiff > mindiff)
-		  break;
-	  }
+    vt_relative_rad = (double)min_offset / TEMPLATE_X_SIZE * 2.0 * M_PI;
+    if (vt_relative_rad > M_PI) {
+      vt_relative_rad = vt_relative_rad - 2.0 * M_PI;
+    }
+    vt_err = mindiff / (double)TEMPLATE_SIZE;
+    vt_match_id = min_template;
 
-
-	  if (cdiff < mindiff)
-	  {
-		mindiff = cdiff;
-		min_template = vt.id;
-		min_offset = offset;
-	  }
-	}
-
-	}
-
-	vt_relative_rad = (double) min_offset/TEMPLATE_X_SIZE * 2.0 * M_PI;
-	if (vt_relative_rad > M_PI)
-	vt_relative_rad = vt_relative_rad - 2.0 * M_PI;
-	vt_err = mindiff / (double) TEMPLATE_SIZE;
-	vt_match_id = min_template;
-
-	vt_error = vt_err;
+    vt_error = vt_err;
 
   } else {
+    BOOST_FOREACH(vt, templates) {
+      diff = 0;
+      it_diff++;
 
-	BOOST_FOREACH(vt, templates)
-	{
+      if (VT_THRESHOLD_CONDITION == true) {
+        if (abs(current_mean - vt.mean) > VT_MATCH_THRESHOLD + epsilon) {
+          continue;
+        }
+      }
 
-  diff = 0;
-  it_diff++;
+      // for each vt try matching the view at different offsets
+      // try to fast break based on error already great than previous errors
+      // handles 2d images shifting only in the x direction
+      // note I haven't tested on a 1d yet.
+      for (offset = 0; offset < VT_SHIFT_MATCH * 2 + 1; offset += VT_STEP_MATCH) {
+        cdiff = 0;
+        template_start_ptr = &vt.data[0] + offset;
+        column_start_ptr = &data[0] + VT_SHIFT_MATCH;
+        row_size = TEMPLATE_X_SIZE;
+        column_end_ptr = &data[0] + TEMPLATE_SIZE - VT_SHIFT_MATCH;
+        sub_row_size = TEMPLATE_X_SIZE - 2 * VT_SHIFT_MATCH;
 
-	if (VT_THRESHOLD_CONDITION == true)
-		if (abs(current_mean - vt.mean) > VT_MATCH_THRESHOLD + epsilon)
-		continue;
+        for (column_row_ptr = column_start_ptr, template_row_ptr = template_start_ptr;
+          column_row_ptr < column_end_ptr;
+          column_row_ptr += row_size, template_row_ptr += row_size)
+        {
+          for (column_ptr = column_row_ptr, template_ptr = template_row_ptr;
+            column_ptr < column_row_ptr + sub_row_size; column_ptr++, template_ptr++)
+          {
+            cdiff += abs(*column_ptr - *template_ptr);
+          }
 
-	// for each vt try matching the view at different offsets
-	// try to fast break based on error already great than previous errors
-	// handles 2d images shifting only in the x direction
-	// note I haven't tested on a 1d yet.
-	for (offset = 0; offset < VT_SHIFT_MATCH*2+1; offset += VT_STEP_MATCH)
-	{
-	  cdiff = 0;
-	  template_start_ptr = &vt.data[0] + offset;
-	  column_start_ptr = &data[0] + VT_SHIFT_MATCH;
-	  row_size = TEMPLATE_X_SIZE;
-	  column_end_ptr = &data[0] + TEMPLATE_SIZE - VT_SHIFT_MATCH;
-	  sub_row_size = TEMPLATE_X_SIZE - 2*VT_SHIFT_MATCH;
+          // fast breaks
+          if (VT_THRESHOLD_CONDITION == true) {
+            if (cdiff > mindiff) {
+              break;
+            }
+          }
+        }
 
-	  for (column_row_ptr = column_start_ptr, template_row_ptr = template_start_ptr; column_row_ptr < column_end_ptr; column_row_ptr+=row_size, template_row_ptr+=row_size)
-	  {
-		for (column_ptr = column_row_ptr, template_ptr = template_row_ptr; column_ptr < column_row_ptr + sub_row_size; column_ptr++, template_ptr++)
-		{
-		  cdiff += abs(*column_ptr - *template_ptr);
-		}
+        if (cdiff < mindiff) {
+          mindiff = cdiff;
+          min_template = vt.id;
+          min_offset = 0;
+        }
+      }
 
-		// fast breaks
-		if (VT_THRESHOLD_CONDITION == true)
-			if (cdiff > mindiff)
-				break;
-	  }
+      diff = cdiff;
+      vt_data.push_back(diff / (double)(TEMPLATE_SIZE - 2 * VT_SHIFT_MATCH * TEMPLATE_Y_SIZE));
+    }
 
-	  if (cdiff < mindiff)
-	  {
-		mindiff = cdiff;
-		min_template = vt.id;
-		min_offset = 0;
-	  }
-	}
+    vt_relative_rad = 0;
+    vt_err = mindiff / (double)(TEMPLATE_SIZE - 2 * VT_SHIFT_MATCH * TEMPLATE_Y_SIZE);
+    vt_match_id = min_template;
 
-  diff = cdiff;
-  vt_data.push_back(diff / (double) (TEMPLATE_SIZE - 2 * VT_SHIFT_MATCH * TEMPLATE_Y_SIZE));
+    cout << "Iteration: " << it_diff << endl;
+    cout.flush();
 
-	}
-
-	vt_relative_rad = 0;
-	vt_err = mindiff / (double)(TEMPLATE_SIZE - 2 * VT_SHIFT_MATCH * TEMPLATE_Y_SIZE);
-	vt_match_id = min_template;
-
-  cout << "Iteration: " << it_diff << endl;
-  cout.flush();
-
-	vt_error = vt_err;
-
+    vt_error = vt_err;
   }
-	auto end = std::chrono::high_resolution_clock::now();
-	auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+  auto end = std::chrono::high_resolution_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
   vt_elapsed_time.push_back(elapsed.count() * 1e-6);
-	printf("Time measured: %.9f seconds.\n", elapsed.count() * 1e-9);
+  printf("Time measured: %.9f seconds.\n", elapsed.count() * 1e-9);
 }
 
-}
+}  // namespace ratslam

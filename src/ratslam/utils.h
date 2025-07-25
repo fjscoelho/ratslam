@@ -1,7 +1,7 @@
 /*
  * openRatSLAM
  *
- * utils - General purpose utility helper functions mainly for angles and readings settings
+ * utils - General purpose utility helper functions mainly for angles and reading settings
  *
  * Copyright (C) 2012
  * David Ball (david.ball@qut.edu.au) (1), Scott Heath (scott.heath@uqconnect.edu.au) (2)
@@ -30,63 +30,72 @@
 #define _RATSLAM_UTILS_H
 
 #define _USE_MATH_DEFINES
+#include <float.h>
 #include <math.h>
 
 #include <iostream>
-#include <float.h>
 
-
-namespace ratslam {
-
-// % Clip the input angle to between 0 and 2pi radians
-inline double clip_rad_360(double angle)
+namespace ratslam
 {
-    while (angle < 0)
-        angle += 2.0 * M_PI;
 
-    while (angle >= 2.0 * M_PI)
-        angle -= 2.0 * M_PI;
- 
+/**
+ * @brief Clip the input angle to the range [0, 2pi) radians.
+ * @param angle Input angle in radians.
+ * @return Clipped angle in [0, 2pi).
+ */
+  inline double clip_rad_360(double angle)
+  {
+    while (angle < 0) {
+      angle += 2.0 * M_PI;
+    }
+    while (angle >= 2.0 * M_PI) {
+      angle -= 2.0 * M_PI;
+    }
     return angle;
-}
+  }
 
-// % Clip the input angle to between -pi and pi radians
-inline double clip_rad_180(double angle)
-{
-    while (angle > M_PI)
-        angle -= 2.0 * M_PI;
-
-    while (angle <= -M_PI)
-        angle += 2.0 * M_PI;
-    
+/**
+ * @brief Clip the input angle to the range [-pi, pi) radians.
+ * @param angle Input angle in radians.
+ * @return Clipped angle in [-pi, pi).
+ */
+  inline double clip_rad_180(double angle)
+  {
+    while (angle > M_PI) {
+      angle -= 2.0 * M_PI;
+    }
+    while (angle <= -M_PI) {
+      angle += 2.0 * M_PI;
+    }
     return angle;
-}
+  }
 
-//% Get the signed delta angle from angle1 to angle2 handling the wrap from 2pi
-//% to 0.
-inline double get_signed_delta_rad(double angle1, double angle2)
-{
+/**
+ * @brief Get the signed delta angle from angle1 to angle2, handling wrap-around.
+ * @param angle1 First angle in radians.
+ * @param angle2 Second angle in radians.
+ * @return Signed delta angle in radians.
+ */
+  inline double get_signed_delta_rad(double angle1, double angle2)
+  {
     double dir = clip_rad_180(angle2 - angle1);
-
     double delta_angle = clip_rad_360(angle1) - clip_rad_360(angle2);
-	delta_angle = fabs(delta_angle);
-
-    if (delta_angle < 2.0 * M_PI - delta_angle)
-    {
-        if (dir > 0)
-            return delta_angle;
-        else
-            return -delta_angle;
+    delta_angle = fabs(delta_angle);
+    if (delta_angle < 2.0 * M_PI - delta_angle) {
+      if (dir > 0) {
+        return delta_angle;
+      } else {
+        return -delta_angle;
+      }
+    } else {
+      if (dir > 0) {
+        return 2.0 * M_PI - delta_angle;
+      } else {
+        return -(2.0 * M_PI - delta_angle);
+      }
     }
-    else
-    {
-        if (dir > 0)
-            return 2.0 * M_PI - delta_angle;
-        else
-            return -(2.0 * M_PI - delta_angle);
-    }
-}
+  }
 
-}; // namspace ratslam
+}  // namespace ratslam
 
-#endif // _RATSLAM_UTILS_H
+#endif  // _RATSLAM_UTILS_H

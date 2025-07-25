@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 4.0)
 project(ratslam)
 
 # Default to C99
@@ -66,7 +66,7 @@ target_link_libraries(ratslam
   ${OpenCV_LIBS}
 )
 
-# Executável ratslam_lv
+# ratslam_lv executable
 add_executable(ratslam_lv src/main_lv.cpp)
 ament_target_dependencies(ratslam_lv ${ament_dependencies})
 target_include_directories(ratslam_lv PUBLIC
@@ -81,7 +81,7 @@ target_link_libraries(ratslam_lv
   ${OpenCV_LIBS}
 )
 
-# Executável ratslam_pc
+# ratslam_pc executable
 add_executable(ratslam_pc src/main_pc.cpp)
 ament_target_dependencies(ratslam_pc ${ament_dependencies})
 target_include_directories(ratslam_pc PUBLIC
@@ -97,7 +97,7 @@ target_link_libraries(ratslam_pc
   ${Boost_LIBRARIES}
 )
 
-# Executável ratslam_em
+# ratslam_em executable
 add_executable(ratslam_em src/main_em.cpp)
 ament_target_dependencies(ratslam_em ${ament_dependencies})
 target_include_directories(ratslam_em PUBLIC
@@ -114,7 +114,7 @@ target_link_libraries(ratslam_em
   ${Boost_LIBRARIES}
 )
 
-# Executável ratslam_vo
+# ratslam_vo executable
 add_executable(ratslam_vo src/main_vo.cpp)
 ament_target_dependencies(ratslam_vo ${ament_dependencies})
 target_include_directories(ratslam_vo PUBLIC
@@ -138,7 +138,7 @@ if(DEFINED ENV{ROS_DISTRO})
   endif()
 endif()
 
-# Instalação dos binários
+# Install binaries
 install(TARGETS 
   ratslam_lv
   ratslam_pc
@@ -147,7 +147,7 @@ install(TARGETS
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-# Instalação de diretórios de launch
+# Install launch, config, and media directories
 install(DIRECTORY 
   launch
   config
