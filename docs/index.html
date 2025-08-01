@@ -130,21 +130,261 @@
             </div>
         </div>
 
-        <!-- <hr class="divider" /> -->
+        <!-- SECTION ---------------------------------------------------------------------- -->
+        <h1>Local View Cells Parameters</h1>
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table table-bordered table-striped table-sm" style="font-size: 0.95em;">
+                    <caption style="caption-side: top; text-align: left;"><b>Table:</b> Local View Cells parameters</caption>
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Parameter name</th>
+                            <th>Default Value</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="3" class="font-italic text-center"><i>Preprocessing parameters</i></td>
+                        </tr>
+                        <tr>
+                            <td><code>image_crop_x/y_min</code></td>
+                            <td>0</td>
+                            <td>These four parameters specify a crop region from the original camera image, starting from the top-left corner of the image,</td>
+                        </tr>
+                        <tr>
+                            <td><code>image_crop_x/y_max</code></td>
+                            <td>-1</td>
+                            <td>to bottom right.</td>
+                        </tr>
+                        <tr>
+                            <td><code>template_x/y_size</code></td>
+                            <td>1</td>
+                            <td>These two values define the width and height of the template (subsampled camera view representation).</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="font-italic text-center"><i>Normalization parameters</i></td>
+                        </tr>
+                        <tr>
+                            <td><code>vt_normalization</code></td>
+                            <td>0.0</td>
+                            <td>Global normalization factor (0 = disabled).</td>
+                        </tr>
+                        <tr>
+                            <td><code>vt_patch_normalise</code></td>
+                            <td>0</td>
+                            <td>Region size for normalization (0 = disabled).</td>
+                        </tr>
+                        <tr>
+                            <td><code>vt_min_patch_normalisation_std</code></td>
+                            <td>0.0</td>
+                            <td>Minimum standard deviation for region normalization.</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="font-italic text-center"><i>Comparison parameters</i></td>
+                        </tr>
+                        <tr>
+                            <td><code>vt_match_threshold</code></td>
+                            <td>0.03</td>
+                            <td>Error threshold for accepting correspondence.</td>
+                        </tr>
+                        <tr>
+                            <td><code>vt_shift_match</code></td>
+                            <td>25</td>
+                            <td>Maximum number of pixels to shift in comparison.</td>
+                        </tr>
+                        <tr>
+                            <td><code>vt_step_match</code></td>
+                            <td>5</td>
+                            <td>Step between displacements tested during comparison.</td>
+                        </tr>
+                        <tr>
+                            <td><code>vt_panoramic</code></td>
+                            <td>0</td>
+                            <td>Panoramic mode (1 = on, 0 = off).</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h1>Pose Cells Parameters</h1>
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table table-bordered table-striped table-sm" style="font-size: 0.95em;">
+                    <caption style="caption-side: top; text-align: left;"><b>Table:</b> Pose Cells parameters</caption>
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Parameter name</th>
+                            <th>Default Value</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="3" class="font-italic text-center"><i>Odometry-related parameters</i></td>
+                        </tr>
+                        <tr>
+                            <td><code>pc_dim_xy</code></td>
+                            <td>21</td>
+                            <td>Size of one side of the grid square (x, y) in units of pose cells.</td>
+                        </tr>
+                        <tr>
+                            <td><code>pc_dim_th</code></td>
+                            <td>36</td>
+                            <td>Grid height in units of pose cells.</td>
+                        </tr>
+                        <tr>
+                            <td><code>pc_w_e_dim</code></td>
+                            <td>7</td>
+                            <td>Defines the size of the excitation kernel. It specifies the dimension (in cells) of the affected 3D neighborhood when a pose cell is active.</td>
+                        </tr>
+                        <tr>
+                            <td><code>pc_w_i_dim</code></td>
+                            <td>5</td>
+                            <td>Dimension of the inhibition kernel (typically smaller than <code>pc_w_e_dim</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><code>pc_w_e_var</code></td>
+                            <td>1</td>
+                            <td>Controls the “width” of the Gaussian in the kernel (the larger the more the smoother the distribution).</td>
+                        </tr>
+                        <tr>
+                            <td><code>pc_w_i_var</code></td>
+                            <td>2</td>
+                            <td>Width of the Gaussian inhibition kernel.</td>
+                        </tr>
+                        <tr>
+                            <td><code>pc_global_inhib</code></td>
+                            <td>0.00002</td>
+                            <td>Controls the global inhibition applied to all cells in the network. Suppresses residual activity in non-dominant cells after each iteration.</td>
+                        </tr>
+                        <tr>
+                            <td><code>pc_cell_x_size</code></td>
+                            <td>1.0</td>
+                            <td>Physical scale of cells. A scaling factor adjusted to suit the translational velocity of the robot.</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="font-italic text-center"><i>Visual Template-related parameters</i></td>
+                        </tr>
+                        <tr>
+                            <td><code>vt_active_decay</code></td>
+                            <td>1.0</td>
+                            <td>Controls the persistence of a visual template.</td>
+                        </tr>
+                        <tr>
+                            <td><code>pc_vt_inject_energy</code></td>
+                            <td>0.15</td>
+                            <td>Controls the amount of energy injected into PoseCells when a recognized visual template is activated.</td>
+                        </tr>
+                        <tr>
+                            <td><code>pc_vt_restore</code></td>
+                            <td>0.05</td>
+                            <td>Determines the rate of global decay.</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="font-italic text-center"><i>Experience-related parameters</i></td>
+                        </tr>
+                        <tr>
+                            <td><code>exp_delta_pc_threshold</code></td>
+                            <td>2.0</td>
+                            <td>It is the radius (in units of pose cells) that determines when a new experience will be created, after shifting the activation package.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h1>Experience Map Parameters</h1>
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table table-bordered table-striped table-sm" style="font-size: 0.95em;">
+                    <caption style="caption-side: top; text-align: left;"><b>Table:</b> Experience map parameters</caption>
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Parameter name</th>
+                            <th>Default Value</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>exp_correction</code></td>
+                            <td>0.5</td>
+                            <td>Correction factor applied during graph relaxation.</td>
+                        </tr>
+                        <tr>
+                            <td><code>exp_loops</code></td>
+                            <td>10</td>
+                            <td>Number of algorithm iterations.</td>
+                        </tr>
+                        <tr>
+                            <td><code>exp_initial_em_deg</code></td>
+                            <td>90</td>
+                            <td>Initial orientation of the robot on the map.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h1>Parameter Values</h1>
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <table class="table table-bordered table-striped table-sm" style="font-size: 0.95em;">
+                    <caption style="caption-side: top; text-align: left;"><b>Table:</b> Parameter Values</caption>
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="2" class="font-italic text-center"><i>Local View Module</i></td>
+                        </tr>
+                        <tr><td><code>image_crop_x_min</code></td><td>40</td></tr>
+                        <tr><td><code>image_crop_x_max</code></td><td>600</td></tr>
+                        <tr><td><code>image_crop_y_max</code></td><td>150</td></tr>
+                        <tr><td><code>image_crop_y_min</code></td><td>300</td></tr>
+                        <tr><td><code>template_x_size</code></td><td>60</td></tr>
+                        <tr><td><code>template_y_size</code></td><td>20</td></tr>
+                        <tr><td><code>vt_shift_match</code></td><td>25</td></tr>
+                        <tr><td><code>vt_step_match</code></td><td>5</td></tr>
+                        <tr><td><code>vt_match_threshold</code></td><td>0.073</td></tr>
+                        <tr><td><code>vt_normalisation</code></td><td>0</td></tr>
+                        <tr><td><code>vt_patch_normalise</code></td><td>2</td></tr>
+                        <tr><td><code>vt_panoramic</code></td><td>0</td></tr>
+                        <tr>
+                            <td colspan="2" class="font-italic text-center"><i>Pose Cell Module</i></td>
+                        </tr>
+                        <tr><td><code>pc_dim_xy</code></td><td>18</td></tr>
+                        <tr><td><code>pc_cell_x_size</code></td><td>1</td></tr>
+                        <tr><td><code>pc_vt_inject_energy</code></td><td>0.2</td></tr>
+                        <tr><td><code>exp_delta_pc_threshold</code></td><td>2.0</td></tr>
+                        <tr><td><code>vt_active_decay</code></td><td>1.0</td></tr>
+                        <tr><td><code>pc_vt_restore</code></td><td>0.05</td></tr>
+                        <tr>
+                            <td colspan="2" class="font-italic text-center"><i>Experience Map Module</i></td>
+                        </tr>
+                        <tr><td><code>exp_loops</code></td><td>50</td></tr>
+                        <tr><td><code>exp_initial_em_deg</code></td><td>180</td></tr>
+                        <tr><td><code>exp_correction</code></td><td>0.5</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <hr class="divider" />
 
         <!-- <h1>Results</h1> -->
         
-        <div class="row">
-            <!-- <div class="col-md-12">
-                <p>blablabla.</p>
-            </div> -->
-            <div class="row" style="text-align: center;">
+        <div class="row captioned_img">
             <div class="col-md-12">
                 <br>
                 <img src="assets/vt_ex_ids.png" alt="vt_ex_ids" width="100%"/>
                 <div class="caption">Active Experience and Visual Template.</div>
             </div>
-        </div>
         </div>
 
         <!-- <hr class="divider" /> -->
