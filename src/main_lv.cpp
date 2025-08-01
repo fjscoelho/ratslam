@@ -29,6 +29,9 @@ ratslam::LocalViewScene * lvs = nullptr;
 bool use_graphics;
 //#endif
 
+std::ofstream outfile("on_image_time.txt", std::ios::app);
+std::vector < double > vt_elapsed_time;
+
 using namespace ratslam;
 
 class RatSLAMViewTemplate : public rclcpp::Node
@@ -129,9 +132,19 @@ private:
 
     image_msg = cv_ptr->toImageMsg();
     topological_msgs::msg::ViewTemplate vt_output;
+    // Medir o tempo antes de processar a imagem
+    auto start = std::chrono::high_resolution_clock::now();
+
     lv_->on_image(
       &image_msg->data[0], (image_msg->encoding == "bgr8" ? false : true), image_msg->width,
       image_msg->height);
+
+    // Medir o tempo após o processamento
+    auto end = std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    //vt_elapsed_time.push_back(elapsed.count());
+    outfile << counter << ": " << elapsed.count() << " nanoseconds" << std::endl;
+    counter++;
 
     vt_output.header.stamp = this->get_clock()->now();
     vt_output.current_id = lv_->get_current_vt();
@@ -149,6 +162,7 @@ private:
   std::unique_ptr<ratslam::LocalViewMatch> lv_;
   rclcpp::Publisher<topological_msgs::msg::ViewTemplate>::SharedPtr pub_vt_;
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr sub_image_;
+  uint counter = 0;
 };
 
 int main(int argc, char * argv[])
@@ -157,5 +171,6 @@ int main(int argc, char * argv[])
   auto node = std::make_shared<RatSLAMViewTemplate>();
   rclcpp::spin(node);
   rclcpp::shutdown();
+  outfile.close();
   return 0;
 }

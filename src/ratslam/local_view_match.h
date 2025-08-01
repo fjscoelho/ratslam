@@ -54,23 +54,25 @@ using boost::property_tree::ptree;
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/vector.hpp>
 
+#include "VisualTemplateSet.hh"
+
 namespace ratslam
 {
 
-  struct VisualTemplate
-  {
-    unsigned int id;
-    std::vector < double > data;
-    double mean;
+  // struct VisualTemplate
+  // {
+  //   unsigned int id;
+  //   std::vector < double > data;
+  //   double mean;
 
-    template < typename Archive >
-    void serialize(Archive & ar, const unsigned int version)
-    {
-      ar & id;
-      ar & data;
-      ar & mean;
-    }
-  };
+  //   template < typename Archive >
+  //   void serialize(Archive & ar, const unsigned int version)
+  //   {
+  //     ar & id;
+  //     ar & data;
+  //     ar & mean;
+  //   }
+  // };
 
   class LocalViewMatch
   {
@@ -155,7 +157,11 @@ private:
     // compare a visual template to all the stored templates, allowing for
     // slen pixel shifts in each direction
     // returns the matching template and the MSE
-    void compare(double & vt_err, unsigned int & vt_match_id);
+    void compare( VisualTemplate *newVt, double &vtError, int &vtMatchId );
+
+    void compareStandard ( VisualTemplate *newVt,
+                        int shiftMatch , int stepMatch,
+                        double &vtError, int &vtMatchId );
 
     int VT_SHIFT_MATCH;
     int VT_STEP_MATCH;
@@ -190,6 +196,13 @@ private:
 
     const unsigned char * view_rgb;
     bool greyscale;
+
+    VisualTemplateSet _vtSet;
+    int _maxVtId;  // '_vtSet' can have more than is used.
+    int    _activeVtId;
+    int    _prevVtId;
+    int _lastSavedId;
+    double _vtRelativeRad;
   };
 
 }  // namespace ratslam
