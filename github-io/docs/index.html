@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Bioinspired SLAM Approach for Unmanned Surface Vehicle</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css">
+    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,500,600' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="style.css">
+
+    <meta property="og:site_name" content="Bioinspired SLAM Approach for Unmanned Surface Vehicle" />
+    <meta property="og:title" content="Bioinspired SLAM Approach for Unmanned Surface Vehicle" />
+    <meta property="og:description" content="Do the Rewards Justify the Means? Measuring Trade-Offs Between Rewards and Ethical Behavior in the Machiavelli Benchmark." />
+    <meta property="og:url" content="https://aypan17.github.io/machiavelli" />
+    <meta property="og:image" content="https://aypan17.github.io/machiavelli/docs/assets/images/machiavelli.svg" />
+
+    <meta property="article:publisher" content="https://aypan17.github.io/machiavelli" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Bioinspired SLAM Approach for Unmanned Surface Vehicle" />
+    <meta name="twitter:description" content="Do the Rewards Justify the Means? Measuring Trade-Offs Between Rewards and Ethical Behavior in the Machiavelli Benchmark." />
+    <meta name="twitter:url" content="https://aypan17.github.io.github.io/" />
+    <meta name="twitter:image" content="https://aypan17.github.io/machiavelli/docs/assets/images/machiavelli.svg" />
+    <!-- <meta name="twitter:site" content="" /> -->
+
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.6.0/lib/p5.js"></script>
+    <script language="javascript" type="text/javascript" src="sketch.js"></script>
+</head>
+
+<body>
+    <div class="container banner-container">
+        <div style="padding: 50px 0 0 0;">
+            <h1 class="text-center"><b>Bioinspired SLAM</b> Approach for Unmanned Surface Vehicle</h1>
+            <br>
+            <div class="img-fullwidth">
+                <img src="assets/Graphical Abstract - OpenRatSLAM2 (1920 x 500 px).png" alt="OpenRatSLAM2" style="width:80%; display:block; margin-left:auto; margin-right:auto; padding:0;"/>
+            </div>
+            <br>
+            <div class="buttons" style="margin-bottom: 8px; text-align: center;">
+                <a class="btn btn-primary" role="button" href="assets/article.pdf" target="_blank">
+                    <svg style="width:24px;height:24px;margin-left:-12px;margin-right:12px" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M16 0H8C6.9 0 6 .9 6 2V18C6 19.1 6.9 20 8 20H20C21.1 20 22 19.1 22 18V6L16 0M20 18H8V2H15V7H20V18M4 4V22H20V24H4C2.9 24 2 23.1 2 22V4H4M10 10V12H18V10H10M10 14V16H15V14H10Z"></path>
+                    </svg>Paper
+                </a>
+                <a class="btn btn-primary" role="button" href="https://github.com/BorgesJVT/ratslam" target="_blank">
+                    <svg style="width:24px;height:24px;margin-left:-12px;margin-right:12px" width="24px" height="24px" class="svg-inline--fa fa-github fa-w-16" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="github" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" data-fa-i2svg="">
+                        <path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"></path>
+                    </svg>Code
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="outer-container">
+    <div class="container main-container">
+
+        <div class="row">
+            <div class="col-md-12" style="text-align: center">
+                <em><p>This paper presents OpenRatSLAM2, a new version of OpenRatSLAM—a bioinspired SLAM framework based on computational models of the rodent hippocampus. OpenRatSLAM2 delivers low-computation-cost visual-inertial based SLAM, suitable for GPS-denied environments. Our contributions include a ROS2-based architecture, experimental results on new waterway datasets, and insights into system parameter tuning. This work represents the first known application of RatSLAM on USVs. The estimated trajectory was compared with ground truth data using the Hausdorff distance. The results show that the algorithm can generate a semimetric map with an error margin acceptable for most robotic applications.</p></em>
+                </div>
+        </div>
+        <br>
+
+        <!-- SECTION ---------------------------------------------------------------------- -->
+        <h1>Key Contributions</h1>
+        <div class="row">
+            <div class="col-md-12">
+                <ul>
+                    <li>A new version of OpenRatSLAM, implemented using ROS 2 Rolling, referred to as OpenRatSLAM2. 
+                        This version benefits from ROS 2's advantages, including improved maintainability and easier integration with modern tools. 
+                        Also, the communication middleware is more robust than the old ROS 1, providing streamlined transition from simulation to physical robot deployment.
+                    </li>
+                    <li>To the best of our knowledge, this is the first application of RatSLAM to an USV.</li>
+                    <li>A visual-inertial dataset collected using a USV for evaluating SLAM performance in aquatic environments.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row captioned_img">
+            <div class="col-md-12">
+                <br>
+                <img src="assets/ASV.jpg" alt="ASV" width="100%"/>
+                <div class="caption">SeaRobotics Surveyor Unmanned Surface Vehicle (USV) 
+                    equipped with an ISA500 compass (AHRS), YSI EXO2 water quality sonde, GPS and camera.</div>
+            </div>
+        </div>
+        <hr class="divider" />
+
+        <!-- SECTION ---------------------------------------------------------------------- -->
+        <h1>Results</h1>
+        
+        <!-- <div class="row">
+            <div class="col-md-12">
+                <p>blablabla.</p>
+            </div>
+        </div> -->
+
+        <div class="row" style="text-align: center;">
+            <div class="col-md-6">
+                <br>
+                <img src="assets/em_1_Lake.png" alt="ASV" width="100%"/>
+                <div class="caption"></div>
+            </div>
+            <div class="col-md-6">
+                <br>
+                <img src="assets/em_2_Lake.png" alt="ASV" width="100%"/>
+                <div class="caption"></div>
+            </div>
+        </div>
+        <div class="row" style="text-align: center;">
+            <div class="col-md-6">
+                <br>
+                <img src="assets/em_3_Lake.png" alt="ASV" width="100%"/>
+                <div class="caption"></div>
+            </div>
+            <div class="col-md-6">
+                <br>
+                <img src="assets/em_4_Lake.png" alt="ASV" width="100%"/>
+                <div class="caption"></div>
+            </div>
+        </div>
+        <div class="row" style="text-align: center;">
+            <div class="col-md-6">
+                <br>
+                <img src="assets/em_5_Lake.png" alt="ASV" width="100%"/>
+                <div class="caption"></div>
+            </div>
+            <div class="col-md-6">
+                <br>
+                <img src="assets/em_6_Lake.png" alt="ASV" width="100%"/>
+                <div class="caption"></div>
+            </div>
+        </div>
+
+        <!-- <hr class="divider" /> -->
+
+        <!-- <h1>Results</h1> -->
+        
+        <div class="row">
+            <!-- <div class="col-md-12">
+                <p>blablabla.</p>
+            </div> -->
+            <div class="row" style="text-align: center;">
+            <div class="col-md-12">
+                <br>
+                <img src="assets/vt_ex_ids.png" alt="vt_ex_ids" width="100%"/>
+                <div class="caption">Active Experience and Visual Template.</div>
+            </div>
+        </div>
+        </div>
+
+        <!-- <hr class="divider" /> -->
+
+        <div class="row captioned_img">
+            <div class="col-md-12">
+                <br>
+                <img src="assets/LakeTrajectory.png" alt="Lake Trajectory" width="100%"/>
+                <div class="caption">Ground truth Trajectory vs. Estimated Trajectory</div>
+            </div>
+        </div>
+        <hr class="divider" />
+
+        <!-- SECTION ---------------------------------------------------------------------- -->
+        <h1>Lake Dataset</h1>
+        <div class="row">
+            <div class="col-md-12">
+                <p>(a) Shows the trajectory followed by the USV, which consists of approximately 900 meters over a duration of about 16 min.</p>
+                <p>(b) presents sample frames captured by the onboard camera.</p>
+            </div>
+        </div>
+        <div class="row captioned_img">
+            <div class="img-fullwidth">
+                <img src="assets/FIU_MMC_Lake_Dataset.jpg" alt="Lake Dataset" style="width:60%; display:block; margin-left:auto; margin-right:auto; padding:0;"/>
+            </div>
+            <div class="col-md-12">
+                <br>
+                <video width="100%" controls="">
+                    <source src="assets/SLAM-video16x.mp4" type="video/mp4">
+                </video>
+                <div class="caption">Lake Dataset Experimental Video.</div>
+            </div>
+        </div>
+        <hr class="divider" />
+
+        <!-- SECTION ---------------------------------------------------------------------- -->
+        <h1>Authors</h1>
+        <br>
+        <div class="row authors">
+            <div class="col-sm-3">
+                <h5 class="text-center"><a class="text-center" href="#">Anonymous Authors</a></h5>
+            </div>
+        </div>
+        
+
+        <!-- <div class="row authors">
+            <div class="col-sm-3">
+                <h5 class="text-center"><a class="text-center" href="#">Fábio Coelho</a></h5>
+                <div class="text-center">Federal University of Rio de Janeiro</div>
+            </div>
+            <div class="col-sm-3">
+                <h5 class="text-center"><a class="text-center" href="#">João Victor T. Borges</a></h5>
+                <div class="text-center">Federal University of Rio de Janeiro</div>
+            </div>
+            <div class="col-sm-3">
+                <h5 class="text-center"><a class="text-center" href="#">Paulo Padrão</a></h5>
+                <div class="text-center">Florida International University</div>
+            </div>
+            <div class="col-sm-3">
+                <h5 class="text-center"><a class="text-center" href="#">José Fuentes</a></h5>
+                <div class="text-center">Florida International University</div>
+            </div>
+        </div>
+        <div class="row authors">
+            <div class="col-sm-3">
+                <h5 class="text-center"><a class="text-center" href="#">Ramon R. Costa</a></h5>
+                <div class="text-center">Federal University of Rio de Janeiro</div>
+            </div>
+            <div class="col-sm-3">
+                <h5 class="text-center"><a class="text-center" href="#">Liu Hsu</a></h5>
+                <div class="text-center">Federal University of Rio de Janeiro</div>
+            </div>
+            <div class="col-sm-3">
+                <h5 class="text-center"><a class="text-center" href="#">Leonardo Bobadilha</a></h5>
+                <div class="text-center">Florida International University</div>
+            </div>
+        </div> -->
+        <hr class="divider" />
+        <br>
+
+        <!-- SECTION ---------------------------------------------------------------------- -->
+        <h1>Citation</h1>
+        <br>
+        <div class="row">
+            <div class="col-md-12">
+                <code>
+                    @article{anonymous2025OpenRatSLAM2,<br>
+                    &nbsp; author = {Anonymous},<br>
+                    &nbsp; title = {Bioinspired SLAM Approach for Unmanned Surface Vehicle.},<br>
+                    &nbsp; journal = {},<br>
+                    &nbsp; year = {},<br>
+                }</code>
+            </div>
+        </div>
+    </div>
+    </div>
+    <script src="/assets/js/scripts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Import the component -->
+</body>
+
+</html>
