@@ -28,8 +28,8 @@ Main dependencies:
 
    ```bash
    cd ~/rolling_ws/src
-   git clone https://github.com/BorgesJVT/ratslam.git
-   git clone https://github.com/BorgesJVT/topological_msgs.git
+   git clone https://github.com/OpenRatSLAM2/ratslam.git
+   git clone https://github.com/OpenRatSLAM2/topological_msgs.git
    ```
 
 2. **Install system dependencies:**
@@ -54,14 +54,32 @@ Main dependencies:
    ```
 
 ## Usage
-To use this package with one of the example datasets, first convert the dataset to a ROS 2 bag format if necessary.
+To use this package with your datasets, first convert the dataset to a ROS 2 bag format, if necessary. Access the datasets google drive link https://drive.google.com/drive/folders/1ggAxMzIyadmenUPoAon2rL8gvJvuv75K?usp=drive_link for examples.
+
+First, run your dataset launch file, for example:
+
+```bash
+ros2 launch ratslam irataus.launch
+```
+
+```bash
+ros2 launch ratslam oxford_newcollege.launch
+```
+
+```bash
+ros2 launch ratslam stlucia.launch
+```
+
+In another terminal, run your bag:
 
 ```bash
 ros2 bag play data/irat_aus_28112011/irat_aus_28112011.db3 --rate 1.0 --clock --start-paused --topics /irat_red/odom /irat_red/camera/image/compressed
 ```
 
-In another terminal, run one of the ratslam nodes, for example:
+```bash
+ros2 bag play data/oxford_newcollege/oxford_newcollege.db3 --rate 1.0 --clock --start-paused --topics /irat_red/odom /irat_red/camera/image/compressed
+```
 
 ```bash
-ros2 launch ratslam irataus.launch
+ros2 bag play data/stlucia_2007/stlucia_2007.db3 --rate 1.0 --clock --start-paused --topics /irat_red/odom /irat_red/camera/image/compressed
 ```
