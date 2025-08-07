@@ -1,0 +1,43 @@
+<launch>
+    <node
+        pkg="ratslam"
+        exec="ratslam_lv"
+        name="RatSLAMLocalViewCells"
+        
+        args="--ros-args --remap _image_transport:=compressed">
+        <param name="config_file" value="$(find-pkg-share ratslam)/config/config_surveyor_visual.txt.in" />
+        <param name="use_sim_time" value="true" />
+    </node>
+
+    <node
+        pkg="ratslam"
+        exec="ratslam_pc"
+        name="RatSLAMPoseCells"
+        
+        args="--ros-args --remap _image_transport:=compressed">
+        <param name="config_file" value="$(find-pkg-share ratslam)/config/config_surveyor_visual.txt.in" />
+        <param name="use_sim_time" value="true" />
+    </node>
+
+    <node
+        pkg="ratslam"
+        exec="ratslam_em"
+        name="RatSLAMExperienceMap"
+        
+        args="--ros-args --remap _image_transport:=compressed">
+        <param name="config_file" value="$(find-pkg-share ratslam)/config/config_surveyor_visual.txt.in" />
+        <param name="use_sim_time" value="true" />
+    </node>
+
+	<node
+        pkg="ratslam"
+        exec="ratslam_vo"
+        name="RatSLAMVisualOdometry"
+        
+        args="--ros-args --remap _image_transport:=compressed">
+        <param name="config_file" value="$(find-pkg-share ratslam)/config/config_surveyor_visual.txt.in" />
+        <param name="use_sim_time" value="true" />
+    </node>
+</launch>
+
+ 
