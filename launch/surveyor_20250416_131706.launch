@@ -8,6 +8,8 @@
         args="--ros-args --remap _image_transport:=compressed">
         <param name="config_file" value="$(find-pkg-share ratslam)/config/config_surveyor_t2.txt.in" />
         <param name="use_sim_time" value="true" />
+        <param name="media_path" value="$(find-pkg-share ratslam)/media" />
+        <param name="image_file" value="irat_sm.tga" />
     </node>
 
     <node
@@ -18,6 +20,8 @@
         args="--ros-args --remap _image_transport:=compressed">
         <param name="config_file" value="$(find-pkg-share ratslam)/config/config_surveyor_t2.txt.in" />
         <param name="use_sim_time" value="true" />
+        <param name="media_path" value="$(find-pkg-share ratslam)/media" />
+        <param name="image_file" value="irat_sm.tga" />
     </node>
 
     <node
@@ -28,6 +32,8 @@
         args="--ros-args --remap _image_transport:=compressed">
         <param name="config_file" value="$(find-pkg-share ratslam)/config/config_surveyor_t2.txt.in" />
         <param name="use_sim_time" value="true" />
+        <param name="media_path" value="$(find-pkg-share ratslam)/media" />
+        <param name="image_file" value="irat_sm.tga" />
     </node>      
             
 <!--  
