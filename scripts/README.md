@@ -35,7 +35,7 @@ ratslam/
   ```bash
   sudo apt-get install ros-$ROS_DISTRO-rosbag2
 
-Before you run these script you **must store an bag with the topics**: /surveyor/ExperienceMap/Map /surveyor/ExperienceMap/RobotPose /surveyor/LocalView/Template /surveyor/PoseCell/TopologicalAction and /surveyor/gps_fix with your ground truth is provided by GPS data.
+Before you run these script you **must store a bag with the topics**: /surveyor/ExperienceMap/Map /surveyor/ExperienceMap/RobotPose /surveyor/LocalView/Template /surveyor/PoseCell/TopologicalAction and /surveyor/gps_fix with your ground truth is provided by GPS data.
 
 **Example:**
 ```bash
