@@ -5,10 +5,10 @@ close all;
 clc;
 
 % Set to true to save a experience map evolution video
-save_video = false;
+save_video = true;
 
 % Set to true to save partial figures of map evolution
-save_figures = false;
+save_figures = true;
 
 if save_video
     numFrames = 50; % Número de iterações/timesteps
@@ -25,19 +25,6 @@ links = readtable('exported_data/links.csv');
 
 % Load Ground Truth
 GT_table = readtable('exported_data/gps.csv');
-
-% % Get the last time stamp of experience map nodes
-% last_node_time_stamp = table2array((nodes(end,"stamp_sec")))
-% 
-% % find time_stamp in GT_table
-% [found, position] = ismember(last_node_time_stamp, GT_table.stamp_sec);
-% if found
-%     disp(position)
-%     linha_encontrada = GT_table(position, :)
-% end
-% 
-% % cut gps table to last map time stamp
-% GT_table = GT_table(1:position, :);
 
 % extract lat and long
 n2 = height(GT_table);
@@ -155,6 +142,8 @@ if save_figures
     print('-dpng', '-r600', figure_name+'.png');
     print('-depsc2', '-r600', figure_name+'.eps');
     fig_counter = fig_counter+1;
+    print('-dpng', '-r600', 'Figures/Exp_Map/Final_Exp_map.png');
+    print('-depsc2', '-r600', 'Figures/Exp_Map/Final_Exp_map.eps');
 end
 
 
@@ -164,8 +153,7 @@ if save_video
     system('ffmpeg -i Figures/Exp_Map/experience_map_evolution.avi -vf "scale=570:414" -c:v libx264 Figures/Exp_Map/experience_map_evolution.mp4');
 end
 
-print('-dpng', '-r600', 'Figures/Exp_Map/Final_Exp_map.png');
-print('-depsc2', '-r600', 'Figures/Exp_Map/Final_Exp_map.eps');
+
 
 
 %% Error Computation
@@ -260,10 +248,18 @@ long = table2array(GT_table(1:n2,"longitude"));
 % interpolate zero datas
 for i = 1:n2
     if long(i) == 0
-        long(i) = (long(i-1)+long(i+1))/2;
+        if i ~= n2
+            long(i) = (long(i-1)+long(i+1))/2;
+        else
+            long(i) = long(i-1);
+        end
     end
     if lat(i) == 0
-        lat(i) = (lat(i-1)+lat(i+1))/2;
+        if i ~= n2
+            lat(i) = (lat(i-1)+lat(i+1))/2;
+        else
+            lat(i) = lat(i-1);
+        end
     end
 end
 

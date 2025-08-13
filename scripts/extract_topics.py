@@ -119,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_path', default='exported_data', help='output path for CSV files')
 
     args = parser.parse_args()
-    view_template_topic = '/'+args.topic_root+'/LocalView/Template'
+    view_template_topic = '/'+args.topic_root+'/view_template'
     view_template_output = args.output_path+'/vt_id.csv'
 
     topologival_action_topic = '/'+args.topic_root+'/PoseCell/TopologicalAction'

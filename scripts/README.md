@@ -39,7 +39,7 @@ Before you run these script you **must store a bag with the topics**: /surveyor/
 
 **Example:**
 ```bash
-ros2 bag record -o surveyor_data1_t2 /surveyor/ExperienceMap/Map /surveyor/ExperienceMap/RobotPose /surveyor/view_template /surveyor/PoseCell/TopologicalAction /surveyor/gps_fix
+ros2 bag record -o surveyor_data1_t2 --storage sqlite3 /surveyor/ExperienceMap/Map /surveyor/ExperienceMap/RobotPose /surveyor/view_template /surveyor/PoseCell/TopologicalAction /surveyor/gps_fix
 ```
 
 
