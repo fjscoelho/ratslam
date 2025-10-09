@@ -36,3 +36,21 @@ ratslam_experience_map:
     # draw
     enable: true
     exp_map_size: 500
+
+ratslam_visual_odometry:
+  ros__parameters:
+    vtrans_image_x_min: 195
+    vtrans_image_x_max: 475
+    vtrans_image_y_min: 270
+    vtrans_image_y_max: 430
+
+    vrot_image_x_min: 195
+    vrot_image_x_max: 475
+    vrot_image_y_min: 75
+    vrot_image_y_max: 240
+
+    camera_fov_deg: 160.0
+    camera_hz: 1.0
+    vtrans_scaling: 100.0
+    vtrans_max: 1.0
+

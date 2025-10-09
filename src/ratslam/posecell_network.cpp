@@ -862,7 +862,10 @@ PosecellNetwork::PosecellAction PosecellNetwork::get_action()
     if (pcvt->exps.size() == 0) {
       create_experience();
       action = CREATE_NODE;
+
+      // The current visualTemplate is associated with at least one previously created experience
     } else if (delta_pc > EXP_DELTA_PC_THRESHOLD || current_vt != prev_vt) {
+      // It will not enter this block (NO_ACTION) only if the displacement is small and the recognized template is the previous one.
       // go through all the exps associated with the current view and find the one with the closest delta_pc
       int matched_exp_id = -1;
       unsigned int i;

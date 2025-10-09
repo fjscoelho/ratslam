@@ -122,7 +122,7 @@ if __name__ == "__main__":
     view_template_topic = '/'+args.topic_root+'/view_template'
     view_template_output = args.output_path+'/vt_id.csv'
 
-    topologival_action_topic = '/'+args.topic_root+'/PoseCell/TopologicalAction'
+    topological_action_topic = '/'+args.topic_root+'/PoseCell/TopologicalAction'
     topological_action_output = args.output_path+'/em_id.csv'
 
     robot_pose_topic = '/'+args.topic_root+'/ExperienceMap/RobotPose'
@@ -143,7 +143,7 @@ if __name__ == "__main__":
         print("⏳ Iniciando extração de dados TopologicalAction...")
         extract_TopologicalAction(
             args.bag_file,
-            topologival_action_topic,
+            topological_action_topic,
             topological_action_output
         )
         print("✅ Extração concluída com sucesso!")
