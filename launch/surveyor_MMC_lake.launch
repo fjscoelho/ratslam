@@ -1,5 +1,10 @@
 <launch>
-    <!-- ros2 bag play /home/borges/humble_ws/src/ratslam/bags/irat_aus_28112011/irat_aus_28112011.db3 __clock -->
+<!-- 
+        ros2 bag play 20250416_131706_bag_ros2/20250416_131706_bag_ros2_0.db3 
+        -\-rate 1.0   
+        -\-clock   
+        -\-start-paused 
+        -\-topics /surveyor/camera/image/compressed /surveyor/odom /surveyor/gps_fix -->
     <node
         pkg="ratslam"
         exec="ratslam_lv"
