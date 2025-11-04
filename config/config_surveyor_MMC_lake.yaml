@@ -20,7 +20,7 @@ ratslam_view_template:
 
 ratslam_pose_cells:
   ros__parameters:
-    pc_cell_x_size: 2.0
+    pc_cell_x_size: 1.0
     pc_dim_xy: 18
     exp_delta_pc_threshold: 1.0
     pc_vt_inject_energy: 0.2
