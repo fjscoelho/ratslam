@@ -7,14 +7,18 @@
     -\-remap /odometry/filtered:=/robotarium/odom -->
 
     <!-- Auxiliar node to convert from sensor_msgs/msg/Image to sensor_msgs/msg/CompressedImage  -->
+    
     <node
         pkg="image_transport"
         exec="republish"
         name="image_republish"
-        output="screen"
-        args="raw compressed">
-        <remap from="/in" to="/stereo_camera/left/image_raw"/>
-        <remap from="/out/compressed" to="/robotarium/camera/image/compressed"/>
+        output="screen">
+        <param name="input_transport" value="raw"/>
+        <param name="output_transport" value="compressed"/>
+        <param name="in_video_mode" value="raw"/>
+        <param name="out_video_mode" value="compressed"/>
+        <remap from="in" to="/stereo_camera/left/image_raw"/>
+        <remap from="out" to="/robotarium/camera/image"/>
     </node>
 
     <node
