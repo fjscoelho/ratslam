@@ -97,6 +97,8 @@ private:
       rclcpp::Time odo_time(msg->header.stamp.sec, msg->header.stamp.nanosec, RCL_ROS_TIME);
       double time_diff = (odo_time - prev_time).seconds();
       em_->on_odo(msg->twist.twist.linear.x, msg->twist.twist.angular.z, time_diff);
+      // printf("EM - Odometry - timediff: %.2f\n", time_diff);
+      RCLCPP_INFO(this->get_logger(), "EM - Odometry - timediff: %.2f", time_diff);
     }
     prev_time = msg->header.stamp;
   }
@@ -106,6 +108,7 @@ private:
 
     // Extract the ROS timestamp from the message
     // double ros_timestamp = msg->header.stamp.sec + msg->header.stamp.nanosec * 1e-9;
+    double delta_time_s = 0.0;
 
     switch (msg->action) {
       case topological_msgs::msg::TopologicalAction::CREATE_NODE:
@@ -157,9 +160,13 @@ private:
       em_map.edge_count = em_->get_num_links();
       em_map.edge.resize(em_->get_num_links());
       for (int i = 0; i < em_->get_num_links(); i++) {
+        delta_time_s = em_->get_link(i)->delta_time_s;
         em_map.edge[i].id = i;
         em_map.edge[i].source_id = em_->get_link(i)->exp_from_id;
         em_map.edge[i].destination_id = em_->get_link(i)->exp_to_id;
+        em_map.edge[i].duration.sec = static_cast<int32_t>(delta_time_s);
+        em_map.edge[i].duration.nanosec = 
+        static_cast<uint32_t>((delta_time_s - static_cast<int32_t>(delta_time_s)) * 1e9);
         em_map.edge[i].transform.translation.x =
           em_->get_link(i)->d * cos(em_->get_link(i)->heading_rad);
         em_map.edge[i].transform.translation.y =

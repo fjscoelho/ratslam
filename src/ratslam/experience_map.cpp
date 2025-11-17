@@ -83,7 +83,7 @@ int ExperienceMap::on_create_experience(unsigned int exp_id, unsigned int second
 
   new_exp->seconds = seconds;
   new_exp->nanoseconds = nanoseconds;
-  
+
   if (experiences.size() == 0) {
     new_exp->x_m = 0;
     new_exp->y_m = 0;
@@ -115,6 +115,7 @@ void ExperienceMap::on_odo(double vtrans, double vrot, double time_diff_s)
   accum_delta_x = accum_delta_x + vtrans * cos(accum_delta_facing);
   accum_delta_y = accum_delta_y + vtrans * sin(accum_delta_facing);
   accum_delta_time_s += time_diff_s;
+  
 }
 
 // iterate the experience map. Perform a graph relaxing algorithm to allow
