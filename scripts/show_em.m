@@ -5,10 +5,10 @@ close all;
 clc;
 
 % Set to true to save a experience map evolution video
-save_video = true;
+save_video = false;
 
 % Set to true to save partial figures of map evolution
-save_figures = true;
+save_figures = false;
 
 if save_video
     numFrames = 50; % Número de iterações/timesteps
@@ -157,35 +157,48 @@ end
 
 
 %% Error Computation
-% Make a resample of ground truth arrays to equalize the size with exp map
-% arrays
-new_len = length(nodes_y);
 
-% Find max and minimum latitude values
-[~, idx_max] = max(x);
-[~, idx_min] = min(x);
+last_node_count = nodes.node_count(end) 
+idx_first = find(nodes.node_count == last_node_count,1)
+last_map_table = nodes(idx_first:end, :);
 
-% Ensures that extremes are included
-indices_extremos = unique([1, idx_min, idx_max, length(x)]);
+% Find equivalent GT (GPS coordinates) by timestamp
+new_len = height(last_map_table)
+new_gps_long = zeros(new_len,1);
+new_gps_lat = zeros(new_len,1);
 
-% Create a new vector of distributed indexes, including extremes
-indices_reamostrados = round(linspace(1, length(x), new_len));
-indices_finais = unique([indices_extremos, indices_reamostrados]);
+for i=1:new_len
+    timestamp = last_map_table.stamp_sec(i);
+    position = find(GT_table.stamp_sec == timestamp, 1);
+    new_gps_long(i) = GT_table.longitude(position);
+    new_gps_lat(i) = GT_table.latitude(position);
+end
 
-% Reamostra o vetor mantendo os extremos
-x_resampled = x(indices_finais(1:new_len));  % Adjust the length to new_len
+em_x = table2array(last_map_table(1:new_len,"x"));
+em_y = table2array(last_map_table(1:new_len,"y"));
 
-% longitude vector
-[~, idx_max] = max(y);
-[~, idx_min] = min(y);
-indices_reamostrados = round(linspace(1, length(y), new_len));
-indices_extremos = unique([1, idx_min, idx_max, length(x)]);
-indices_finais = unique([indices_extremos, indices_reamostrados]);
+% Offset Correction
+off_setx = em_x(1);
+off_sety = em_y(1);
 
-y_resampled = y(indices_finais(1:new_len));  % Adjust the length to new_len
+em_x = em_x - off_setx;
+em_y = em_y - off_sety;
 
-erro_x = x_resampled - nodes_x;
-erro_y = y_resampled - nodes_y;
+% interpolate zero datas of GPS
+for i = 1:new_len
+    if new_gps_long(i) == 0
+        new_gps_long(i) = (new_gps_long(i-1)+new_gps_long(i+1))/2;
+    end
+    if new_gps_lat(i) == 0
+        new_gps_lat(i) = (new_gps_lat(i-1)+new_gps_lat(i+1))/2;
+    end
+end
+
+[x, y] = lat_lon_to_cartesian(new_gps_lat, new_gps_long);
+
+
+erro_x = x - em_x;
+erro_y = y - em_y;
 
 erro_dist = zeros(new_len,1);
 erro_sqrt = zeros(new_len,1);
@@ -199,27 +212,51 @@ end
 % RMSe = sqrt(sum(erro_sqrt)/new_len)
 erro_med = sum(erro_dist)/new_len;
 k = 0:new_len-1;
+[max_erro_dist, max_idx] = max(erro_dist)
 
 figure'
-
 plot(k,erro_dist,'LineWidth',1.5,'Color','b','LineStyle','-')
 hold on
 plot(k,erro_med*ones(new_len,1),'LineWidth',1.5,'Color','r','LineStyle','--')
 xlim([0 new_len-1])
 grid on
+% Show coordinates next to point
+lbl = sprintf('x = %i\ny = %0.2f', max_idx, max_erro_dist);
+text(max_idx, max_erro_dist+.5, lbl, 'VerticalAlignment', 'bottom', ...
+     'HorizontalAlignment', 'left', 'FontSize', 12, 'BackgroundColor','y','Margin',2);
+stem(max_idx,max_erro_dist,'LineWidth',1.5,'Color','k')
 hold off
 title(['Trajectory error - Average = ' num2str(erro_med) ' m'],'FontSize',12,'Interpreter','latex')
 xlabel('$k$ (samples)','FontSize',12,'Interpreter','latex');
 ylabel('Euclidian distance','FontSize',12,'Interpreter','latex');
-legend('Euclidian distance','Average error','Interpreter','latex','Location','best') 
+legend('Euclidian distance','Average error','Maximum error','Interpreter','latex','Location','best') 
 
 print('-dpng', '-r600', 'Figures/Exp_Map/Distance_error.png');
 print('-depsc2', '-r600', 'Figures/Exp_Map/Distance_error.eps');
 
+figure'
+plot(x,y,'LineWidth',1.5,'Color','b','LineStyle','-')
+hold on
+plot(em_x,em_y,'LineWidth',1.5,'Color','r','LineStyle','-')
+plot([em_x(max_idx) x(max_idx)],[em_y(max_idx) y(max_idx)],'LineWidth',1.5,'Color','k','LineStyle','--')
+sz = 75; % Scatter marke size
+scatter(em_x(1),em_y(1),'red','filled','Marker','o','SizeData',sz)
+scatter(x(1),y(1),'blue','filled','Marker','o','SizeData',sz)
+scatter(x(end),y(end),'blue','diamond','filled','SizeData',sz)
+scatter(em_x(end),em_y(end),'red','diamond','filled','SizeData',sz)
+scatter(em_x(max_idx),em_y(max_idx),'black','diamond','filled','SizeData',sz)
+scatter(x(max_idx),y(max_idx),'black','diamond','filled','SizeData',sz)
+title(['Experience Map - Maximum error = ' num2str(max_erro_dist) ' m'], ...
+    'FontSize',12,'Interpreter','latex')
+xlabel('$x$ (m)','FontSize',12,'Interpreter','latex');
+ylabel('$y$ (m)','FontSize',12,'Interpreter','latex');
+legend('ground truth','trajectory','maximum error','Interpreter','latex','Location','best')            
+grid on
+
 % Export to .csv file
-headers = {'stamp_sec', 'Latitude', 'Longitude','x_estimated','y_estimated'};
-stamp_sec = 0:1:new_len-1;
-data = [stamp_sec' x_resampled y_resampled nodes_x nodes_y];
+% headers = {'stamp_sec', 'Latitude', 'Longitude','x_estimated','y_estimated'};
+% stamp_sec = 0:1:new_len-1;
+% data = [stamp_sec' x_resampled y_resampled nodes_x nodes_y];
 
 %%
 function [x, y] = ground_truth_cutting(last_node_time_stamp, GT_table)

@@ -18,7 +18,7 @@ def extract_topological_data(bag_file, topic_name, nodes_csv, links_csv):
         # write node file
         with open(nodes_csv, 'w', newline='') as nodes_file:
             node_writer = csv.writer(nodes_file)
-            node_writer.writerow([
+            node_writer.writerow(['node_count', 'edge_count',
                 'stamp_sec', 'stamp_nsec', 'id', 'x', 'y', 'z',
                 'orientation_x', 'orientation_y', 'orientation_z', 'orientation_w'
             ])
@@ -46,19 +46,22 @@ def extract_topological_data(bag_file, topic_name, nodes_csv, links_csv):
                         # timestamp = (ts/1e9) # datetime.fromtimestamp(ts/1e9).isoformat()
                         stamp_sec = msg.header.stamp.sec
                         stamp_nsec = msg.header.stamp.nanosec
+                        node_count = msg.node_count
+                        edge_count = msg.edge_count
                         # Process nodes
                         for node in msg.node:
                             node_writer.writerow([
-                                stamp_sec,
-                                stamp_nsec,
+                                node_count, edge_count,
+                                node.pose.header.stamp.sec,
+                                node.pose.header.stamp.nanosec,
                                 node.id,
-                                node.pose.position.x,
-                                node.pose.position.y,
-                                node.pose.position.z,
-                                node.pose.orientation.x,
-                                node.pose.orientation.y,
-                                node.pose.orientation.z,
-                                node.pose.orientation.w,
+                                node.pose.pose.position.x,
+                                node.pose.pose.position.y,
+                                node.pose.pose.position.z,
+                                node.pose.pose.orientation.x,
+                                node.pose.pose.orientation.y,
+                                node.pose.pose.orientation.z,
+                                node.pose.pose.orientation.w,
                             ])
 
                         # Process edges

@@ -1,38 +1,35 @@
 # Extracts GPS data from ROS 2 bag files and exports it to CSV format.
 
-from rosbags.rosbag2 import Reader
-import csv
-import struct
-from pathlib import Path
-from sensor_msgs.msg import NavSatFix
+import rclpy
 from rclpy.serialization import deserialize_message
-import argparse
+from rosbag2_py import SequentialReader, StorageOptions, ConverterOptions
+from sensor_msgs.msg import NavSatFix
+from pathlib import Path
+import csv
 
-# Example args:
-# python3 extract_gps_data.py ../../../bags/20250416_131706_bag_ros2 --topic /surveyor/gps_fix --gps_data exported_data/gps.csv
-
-def extract_gps(bag_path, topic, output_file):
-    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+def extract_gps_data(bag_path, topic_name, output_file):
+    # Configurar leitor do bag
+    storage_options = StorageOptions(uri=bag_path, storage_id='sqlite3')
+    converter_options = ConverterOptions('', '')
     
-    with Reader(bag_path) as reader, open(output_file, 'w', newline='') as csvfile:
+    reader = SequentialReader()
+    reader.open(storage_options, converter_options)
+    
+    # Escrever CSV
+    with open(output_file, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['stamp_sec', 'stamp_nsec', 'status','service','latitude', 'longitude'])
+        writer.writerow(['stamp_sec', 'stamp_nsec', 'latitude', 'longitude', 'altitude'])
         
-        for connection, timestamp, rawdata in reader.messages():
-            if connection.topic == topic:
-                try:
-                    
-                    deserialized_msg = deserialize_message(rawdata, NavSatFix)
-
-                    writer.writerow([deserialized_msg.header.stamp.sec, deserialized_msg.header.stamp.nanosec,
-                                     deserialized_msg.status.status, deserialized_msg.status.service,
-                                     deserialized_msg.latitude, deserialized_msg.longitude])
-
-                except Exception as e:
-                    print(f"Erro processando mensagem RobotPose em t={timestamp}: {str(e)[:200]}")
+        while reader.has_next():
+            topic, data, timestamp = reader.read_next()
+            if topic == topic_name:
+                msg = deserialize_message(data, NavSatFix)
+                writer.writerow([msg.header.stamp.sec, msg.header.stamp.nanosec, msg.latitude, msg.longitude, msg.altitude])
+    
+    print(f"Dados GPS extraídos para: {output_file}")
 
 if __name__ == "__main__":
-
+    import argparse
     parser = argparse.ArgumentParser(description='Extract GPS data from gps_fix message to CSV')
     parser.add_argument('bag_file', help='Path to folder that contains bag in .db3 format')
     parser.add_argument('--topic', default='/surveyor/gps_fix', help='Topic name to extract from bag')
@@ -42,7 +39,7 @@ if __name__ == "__main__":
 
     try:
         print("⏳ Starting gps_fix data extraction...")
-        extract_gps(
+        extract_gps_data(
             args.bag_file,
             args.topic,
             args.gps_data
