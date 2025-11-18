@@ -83,9 +83,9 @@ while i <= n
             scatter(x(end),y(end),'blue','diamond','filled','SizeData',sz)
             scatter(nodes_x(end),nodes_y(end),'red','diamond','filled','SizeData',sz)
             hold off
-            title('Experience Map','FontSize',12,'Interpreter','latex')
-            xlabel('$x$ (m)','FontSize',12,'Interpreter','latex');
-            ylabel('$y$ (m)','FontSize',12,'Interpreter','latex');
+            title('Experience Map','FontSize',14,'Interpreter','latex')
+            xlabel('$x$ (m)','FontSize',14,'Interpreter','latex');
+            ylabel('$y$ (m)','FontSize',14,'Interpreter','latex');
             legend('ground truth','trajectory','Interpreter','latex','Location','best')            
             grid on
             hold off
@@ -126,9 +126,9 @@ scatter(x(1),y(1),'blue','filled','Marker','o','SizeData',sz)
 scatter(x(end),y(end),'blue','diamond','filled','SizeData',sz)
 scatter(nodes_x(end),nodes_y(end),'red','diamond','filled','SizeData',sz)
 hold off
-title('Experience Map - offset correction','FontSize',12,'Interpreter','latex')
-xlabel('$x$ (m)','FontSize',12,'Interpreter','latex');
-ylabel('$y$ (m)','FontSize',12,'Interpreter','latex');
+title('Experience Map - offset correction','FontSize',14,'Interpreter','latex')
+xlabel('$x$ (m)','FontSize',14,'Interpreter','latex');
+ylabel('$y$ (m)','FontSize',14,'Interpreter','latex');
 legend('ground truth','trajectory','Interpreter','latex','Location','best')            
 grid on
 hold off
@@ -222,13 +222,13 @@ xlim([0 new_len-1])
 grid on
 % Show coordinates next to point
 lbl = sprintf('x = %i\ny = %0.2f', max_idx, max_erro_dist);
-text(max_idx, max_erro_dist+.5, lbl, 'VerticalAlignment', 'bottom', ...
-     'HorizontalAlignment', 'left', 'FontSize', 12, 'BackgroundColor','y','Margin',2);
+text(max_idx-50, max_erro_dist+.5, lbl, 'VerticalAlignment', 'bottom', ...
+     'HorizontalAlignment', 'left', 'FontSize', 10, 'BackgroundColor','y','Margin',2);
 stem(max_idx,max_erro_dist,'LineWidth',1.5,'Color','k')
 hold off
 title(['Trajectory error - Average = ' num2str(erro_med) ' m'],'FontSize',12,'Interpreter','latex')
-xlabel('$k$ (samples)','FontSize',12,'Interpreter','latex');
-ylabel('Euclidian distance','FontSize',12,'Interpreter','latex');
+xlabel('$k$ (samples)','FontSize',14,'Interpreter','latex');
+ylabel('Euclidian distance','FontSize',14,'Interpreter','latex');
 legend('Euclidian distance','Average error','Maximum error','Interpreter','latex','Location','best') 
 
 print('-dpng', '-r600', 'Figures/Exp_Map/Distance_error.png');
@@ -247,11 +247,14 @@ scatter(em_x(end),em_y(end),'red','diamond','filled','SizeData',sz)
 scatter(em_x(max_idx),em_y(max_idx),'black','diamond','filled','SizeData',sz)
 scatter(x(max_idx),y(max_idx),'black','diamond','filled','SizeData',sz)
 title(['Experience Map - Maximum error = ' num2str(max_erro_dist) ' m'], ...
-    'FontSize',12,'Interpreter','latex')
-xlabel('$x$ (m)','FontSize',12,'Interpreter','latex');
-ylabel('$y$ (m)','FontSize',12,'Interpreter','latex');
+    'FontSize',14,'Interpreter','latex')
+xlabel('$x$ (m)','FontSize',14,'Interpreter','latex');
+ylabel('$y$ (m)','FontSize',14,'Interpreter','latex');
 legend('ground truth','trajectory','maximum error','Interpreter','latex','Location','best')            
 grid on
+
+print('-dpng', '-r600', 'Figures/Exp_Map/Maximum_error.png');
+print('-depsc2', '-r600', 'Figures/Exp_Map/Maximum_error.eps');
 
 % Export to .csv file
 % headers = {'stamp_sec', 'Latitude', 'Longitude','x_estimated','y_estimated'};

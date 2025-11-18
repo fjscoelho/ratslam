@@ -1,115 +1,124 @@
-from rosbags.rosbag2 import Reader
+#!/usr/bin/env python3
+
 import csv
 import struct
 from pathlib import Path
 import argparse
+from rclpy.serialization import deserialize_message
+from rosbag2_py import SequentialReader, StorageOptions, ConverterOptions
+# from rosbag2_py import Reader
+
+# Importar os tipos de mensagem que você está usando
+from std_msgs.msg import Header
+from geometry_msgs.msg import PoseStamped
+from topological_msgs.msg import ViewTemplate, TopologicalAction
 
 def extract_ViewTemplate(bag_path, topic, output_file):
     # Ensure that the output directory exists 
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     
-    with Reader(bag_path) as reader, open(output_file, 'w', newline='') as csvfile:
+    # Configurar leitor do bag
+    storage_options = StorageOptions(uri=bag_path, storage_id='sqlite3')
+    converter_options = ConverterOptions('', '')
+    
+    reader = SequentialReader()
+    reader.open(storage_options, converter_options)
+    
+    with open(output_file, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['stamp_sec', 'stamp_nsec','current_id', 'relative_rad', 'feature_count'])
         
-        for connection, timestamp, rawdata in reader.messages():
-            if connection.topic == topic:
+        while reader.has_next():
+            topic_name, data, timestamp_ns = reader.read_next()
+            if topic_name == topic:
                 try:
-                    # Data structure
-                    # header:
-                    #   stamp:
-                    #       sec: uint32 (4 bytes)
-                    #       nanosec: uint32 (4 bytes)
-                    #   frame_id: (empty) (8 bytes)
-                    # current_id: uint32 (4 bytes)
-                    # relative_rad: float64 (8 bytes)
-                    # feature: float64[]
-                    # elapsed_time: float64[]
+                    # Converter para segundos e nanosegundos
+                    # stamp_sec = timestamp_ns // 1_000_000_000
+                    # stamp_nsec = timestamp_ns % 1_000_000_000
                     
-                    stamp_sec = struct.unpack('<I', rawdata[4:8])[0]  # <I = unsigned int little-endian
-                    stamp_nsec = struct.unpack('<I', rawdata[8:12])[0]  # <I = unsigned int little-endian
-                    current_id = struct.unpack('<I', rawdata[20:24])[0]  # <I = unsigned int little-endian
-                    relative_rad = struct.unpack('<d', rawdata[24:32])[0]  # <d = double little-endian
-                    feature_count = struct.unpack('<I', rawdata[32:36])[0]
+                    msg = deserialize_message(data, ViewTemplate)
+                    stamp_sec = msg.header.stamp.sec
+                    stamp_nsec = msg.header.stamp.nanosec
+                    current_id = msg.current_id
+                    relative_rad = msg.relative_rad
+                    feature_count = len(msg.feature) if hasattr(msg, 'feature') else 0
+                    
                     
                     writer.writerow([stamp_sec, stamp_nsec, current_id, relative_rad, feature_count])
                     
                 except Exception as e:
-                    print(f"Erro processando mensagem ViewTemplate em t={timestamp}: {str(e)[:200]}")
+                    print(f"Erro processando mensagem ViewTemplate: {str(e)[:200]}")
 
 def extract_TopologicalAction(bag_path, topic, output_file):
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     
-    with Reader(bag_path) as reader, open(output_file, 'w', newline='') as csvfile:
+    # Configurar leitor do bag com rosbag2_py
+    storage_options = StorageOptions(uri=bag_path, storage_id='sqlite3')
+    converter_options = ConverterOptions('', '')
+    
+    reader = SequentialReader()
+    reader.open(storage_options, converter_options)
+    
+    with open(output_file, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['stamp_sec', 'stamp_nsec', 'action', 'src_id', 'dest_id', 'relative_rad'])
         
-        for connection, timestamp, rawdata in reader.messages():
-            if connection.topic == topic:
+        while reader.has_next():
+            topic_name, data, timestamp_ns = reader.read_next()
+            if topic_name == topic:
                 try:
-                    # Data structure
-                    # header:
-                    #   stamp:
-                    #       sec: uint32 (4 bytes)
-                    #       nanosec: uint32 (4 bytes)
-                    #   frame_id: (empty) (8 bytes)
-                    # action: uint32 (4 bytes)
-                    # src_id: uint32 (4 bytes)
-                    # dest_id: uint32 (4 bytes)
-                    # relative_rad: float64 (8 bytes)
-                   
-                    stamp_sec = struct.unpack('<I', rawdata[4:8])[0]  # <I = unsigned int little-endian
-                    stamp_nsec = struct.unpack('<I', rawdata[8:12])[0]  # <I = unsigned int little-endian
-                    action = struct.unpack('<I', rawdata[20:24])[0]  # <I = unsigned int little-endian
-                    src_id = struct.unpack('<I', rawdata[24:28])[0]  # <I = unsigned int little-endian
-                    dest_id = struct.unpack('<I', rawdata[28:32])[0]  # <I = unsigned int little-endian
-                    relative_rad = struct.unpack('<d', rawdata[32:40])[0] # <d = double little-endian
+                    # Usar deserialização para TopologicalAction
+                    msg = deserialize_message(data, TopologicalAction)
+                    
+                    # Extrair dados da mensagem deserializada
+                    stamp_sec = msg.header.stamp.sec
+                    stamp_nsec = msg.header.stamp.nanosec
+                    action = msg.action
+                    src_id = msg.src_id
+                    dest_id = msg.dest_id
+                    relative_rad = msg.relative_rad
                     
                     writer.writerow([stamp_sec, stamp_nsec, action, src_id, dest_id, relative_rad])
                     
                 except Exception as e:
-                    print(f"Erro processando mensagem TopologicalAction em t={timestamp}: {str(e)[:200]}")
-
+                    print(f"Erro processando mensagem TopologicalAction: {str(e)[:200]}")
+                    
 def extract_RobotPose(bag_path, topic, output_file):
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     
-    with Reader(bag_path) as reader, open(output_file, 'w', newline='') as csvfile:
+    # Configurar leitor do bag com rosbag2_py
+    storage_options = StorageOptions(uri=bag_path, storage_id='sqlite3')
+    converter_options = ConverterOptions('', '')
+    
+    reader = SequentialReader()
+    reader.open(storage_options, converter_options)
+    
+    with open(output_file, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['stamp_sec', 'stamp_nsec', 'pos_x', 'pos_y', 'pos_z', 'ori_x', 'ori_y', 'ori_z', 'ori_w'])
         
-        for connection, timestamp, rawdata in reader.messages():
-            if connection.topic == topic:
+        while reader.has_next():
+            topic_name, data, timestamp_ns = reader.read_next()
+            if topic_name == topic:
                 try:
-                    # Data structure
-                    # header:
-                    #   stamp:
-                    #       sec: uint32 (4 bytes)
-                    #       nanosec: uint32 (4 bytes)
-                    #   frame_id: (empty) (8 bytes)
-                    # pose
-                    #   position
-                    #       x: float64 (8 bytes)
-                    #       y: float64 (8 bytes)
-                    #       z: float64 (8 bytes)
-                    #   orientation
-                    #       x: float64 (8 bytes)
-                    #       y: float64 (8 bytes)
-                    #       z: float64 (8 bytes)
-                    #       w: float64 (8 bytes)
-                   
-                    stamp_sec = struct.unpack('<I', rawdata[4:8])[0]  # <I = unsigned int little-endian
-                    stamp_nsec = struct.unpack('<I', rawdata[8:12])[0]  # <I = unsigned int little-endian
-                    pos_x = struct.unpack('<d', rawdata[20:28])[0]  # <d = double little-endian
-                    pos_y = struct.unpack('<d', rawdata[28:36])[0]  # <d = double little-endian
-                    pos_z = struct.unpack('<d', rawdata[36:44])[0]  # <d = double little-endian
-                    ori_x = struct.unpack('<d', rawdata[44:52])[0]  # <d = double little-endian
-                    ori_y = struct.unpack('<d', rawdata[52:60])[0]  # <d = double little-endian
-                    ori_z = struct.unpack('<d', rawdata[60:68])[0]  # <d = double little-endian
-                    ori_w = struct.unpack('<d', rawdata[68:76])[0]  # <d = double little-endian
+                    # Usar deserialização para PoseStamped (método mais robusto)
+                    msg = deserialize_message(data, PoseStamped)
+                    
+                    # Extrair dados da mensagem deserializada
+                    stamp_sec = msg.header.stamp.sec
+                    stamp_nsec = msg.header.stamp.nanosec
+                    pos_x = msg.pose.position.x
+                    pos_y = msg.pose.position.y
+                    pos_z = msg.pose.position.z
+                    ori_x = msg.pose.orientation.x
+                    ori_y = msg.pose.orientation.y
+                    ori_z = msg.pose.orientation.z
+                    ori_w = msg.pose.orientation.w
+                    
                     writer.writerow([stamp_sec, stamp_nsec, pos_x, pos_y, pos_z, ori_x, ori_y, ori_z, ori_w])
                     
                 except Exception as e:
-                    print(f"Erro processando mensagem RobotPose em t={timestamp}: {str(e)[:200]}")
+                    print(f"Erro processando mensagem RobotPose: {str(e)[:200]}")
 
 if __name__ == "__main__":
 

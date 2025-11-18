@@ -31,28 +31,28 @@ figh = figure;
 
 vt_id_table = readtable('exported_data/vt_id.csv');
 vt_length = height(vt_id_table);
-start_time = vt_id_table.stamp_sec(1);;
-t1 = vt_id_table.stamp_sec - start_time;
-vt_id = vt_id_table.current_id;
+start_time = vt(1, 1);
+% t1 = vt(1:vt_length, 1) - start;
 % 
+% vt_id = vt(1:vt_length, 3);
+% plot(t1, vt_id, 'rx',"LineWidth",1.1);
+% grid on
+
 em_id_table = readtable('exported_data/em_id.csv');
 em_length = height(em_id_table);
 start_time_t2 = em_id_table.stamp_sec(1);
-t2 = em_id_table.stamp_sec - start_time;
+t2 = em_id_table.stamp_sec-start_time_t2;
 dest_id = em_id_table.dest_id;
-%
-
-plot(t1, vt_id, 'rx',"LineWidth",1.1);
-grid on
+% 
 hold on;
 plot(t2, dest_id, 'bo','LineWidth',1.1);
 hold off;
 % 
-xlabel('$t$ (s)','FontSize',14,'Interpreter','latex');
-ylabel('Template / Experience ID Number', 'FontSize',14,'Interpreter','latex');
+xlabel('$t$ (s)','FontSize',12,'Interpreter','latex');
+ylabel('Template / Experience ID Number', 'FontSize',12,'Interpreter','latex');
 % 
-% axis tight;
-legend('Template ID', 'Experience ID', 'Location', 'NorthWest','Interpreter','latex','Fontsize',12);
+% % axis tight;
+% legend('Template ID', 'Experience ID', 'Location', 'NorthWest','Interpreter','latex','Fontsize',12);
 % 
-print -r300 -djpeg100 Figures/vt_ex_ids.png
-print('-depsc2', '-r600', 'Figures/vt_ex_ids.eps');
+% print -r300 -djpeg100 Figures/vt_ex_ids.png
+% print('-depsc2', '-r600', 'Figures/vt_ex_ids.eps');

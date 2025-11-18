@@ -133,7 +133,8 @@ private:
       &image_msg->data[0], (image_msg->encoding == "bgr8" ? false : true), image_msg->width,
       image_msg->height);
 
-    vt_output.header.stamp = this->get_clock()->now();
+    // vt_output.header.stamp = this->get_clock()->now();
+    vt_output.header.stamp = msg->header.stamp;
     vt_output.current_id = lv_->get_current_vt();
     vt_output.relative_rad = lv_->get_relative_rad();
 
