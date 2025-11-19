@@ -5,10 +5,10 @@ close all;
 clc;
 
 % Set to true to save a experience map evolution video
-save_video = false;
+save_video = true;
 
 % Set to true to save partial figures of map evolution
-save_figures = false;
+save_figures = true;
 
 if save_video
     numFrames = 50; % Número de iterações/timesteps
