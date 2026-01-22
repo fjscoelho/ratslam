@@ -15,6 +15,8 @@ plt.rc('font', family='serif')
 plt.rc('font', serif='cm')
 plt.rc('font', size=13)
 
+colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown']
+
 def cartesian_to_latlon(x, y, origin_lat, origin_lon):
     
     # Put the UTM parameters form the correct place
@@ -215,9 +217,20 @@ def create_animation(data_frames):
     tiler = cimgt.GoogleTiles(style='satellite')
     ax.add_image(tiler, 21)
 
-    # Prepare plots
-    line_plots = [ax.plot([], [], linestyle=':')[0] for i in range(len(data_frames))]
-    current_positions = [ax.scatter([], [], marker='o') for i in range(len(data_frames))]
+    # Prepare plots - MODIFICADO
+    line_plots = []
+    current_positions = []
+
+    for i in range(len(data_frames)):
+        # Linha com cor específica e estilo
+        line, = ax.plot([], [], linestyle=':', color=colors[i % len(colors)], 
+                        linewidth=2, label=f'Trajetória {i+1}')
+        line_plots.append(line)
+        
+        # Ponto com mesma cor da linha
+        point = ax.scatter([], [], marker='o', color=colors[i % len(colors)], 
+                        s=50, edgecolor='black', zorder=5)
+        current_positions.append(point)
 
 
     # Frame update function
@@ -231,7 +244,7 @@ def create_animation(data_frames):
         if DEBUG:
             print('Frame ' + str(frame) + ' updated. Latitude: ' + str(df['latitude'][frame]) +  ' Latitude: ' + str(df['longitude'][frame]))
         
-        plt.legend(['Ground truth', 'Estimated trajectory'], loc='upper right', frameon=True)
+        plt.legend(['Ground truth (gt)','current gt position' ,'Estimated trajectory (et)','current et position'], loc='upper right', frameon=True)
         return line_plots + current_positions
 
     # Animate

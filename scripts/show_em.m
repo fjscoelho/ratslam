@@ -40,7 +40,7 @@ for i = 1:n2
         lat(i) = (lat(i-1)+lat(i+1))/2;
     end
 end
-
+plot(long,lat)
 [x, y] = lat_lon_to_cartesian(lat, long);
 
 n = height(nodes);
